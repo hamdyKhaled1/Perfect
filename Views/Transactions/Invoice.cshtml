@@ -122,6 +122,11 @@
                     <div class="calculated-field-display">@Model.MealTransaction.NetWeight.ToString("#,##0.####")</div>
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label">ملاحظات بعد الصافي</label>
+                    <div class="form-control bg-light" style="min-height: 58px;">@(Model.MealTransaction.GeneralNotes ?? "-")</div>
+                </div>
+
                 <hr />
 
                 <div class="mb-3">
@@ -139,10 +144,6 @@
                     <div class="total-due-display">@((Model.AccountingTransaction.SubTotal + Model.MealTransaction.MealTotal).ToString("#,##0.####"))</div>
                 </div>
 
-                <div class="mb-0">
-                    <label class="form-label">ملاحظات عامة</label>
-                    <div class="form-control bg-light" style="min-height: 58px;">@(Model.MealTransaction.GeneralNotes ?? "-")</div>
-                </div>
             </div>
         </div>
     </div>

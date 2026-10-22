@@ -1,0 +1,37 @@
+@model HagImamAccounts.ViewModels.StripInventoryOverviewViewModel
+@{
+    ViewData["Title"] = "مخزون الاستربس";
+}
+
+<div class="fade-in">
+    <h3 class="fw-bold mb-4">
+        <i class="fas fa-boxes-stacked me-2 text-success"></i>مخزون الاستربس
+    </h3>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <a asp-action="Details" asp-route-cartonType="@HagImamAccounts.Models.StripCartonType.FiveKilogram"
+               class="text-decoration-none">
+                <div class="card card-dashboard h-100 border-success">
+                    <div class="card-body">
+                        <div class="text-muted">كراتين 5 كيلو</div>
+                        <div class="display-6 fw-bold text-success">@Model.FiveKilogramBalance.ToString("#,##0") كرتونة</div>
+                        <div class="small text-muted mt-2">عرض الحركات الخاصة بهذا النوع وتسجيل حركة جديدة</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a asp-action="Details" asp-route-cartonType="@HagImamAccounts.Models.StripCartonType.NineHundredGram"
+               class="text-decoration-none">
+                <div class="card card-dashboard h-100 border-success">
+                    <div class="card-body">
+                        <div class="text-muted">كراتين 900 جرام</div>
+                        <div class="display-6 fw-bold text-success">@Model.NineHundredGramBalance.ToString("#,##0") كرتونة</div>
+                        <div class="small text-muted mt-2">عرض الحركات الخاصة بهذا النوع وتسجيل حركة جديدة</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>

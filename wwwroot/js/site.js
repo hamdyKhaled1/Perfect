@@ -60,6 +60,16 @@ $(document).ready(function () {
         updateBulkMealRow($(this).closest('[data-bulk-meal-row]'));
         updateBulkMealTotals();
     });
+    $('[data-expression-operator]').on('click', function () {
+        var input = document.getElementById($(this).data('expression-target'));
+        if (!input) return;
+
+        var start = input.selectionStart ?? input.value.length;
+        var end = input.selectionEnd ?? start;
+        input.setRangeText(String($(this).data('expression-operator')), start, end, 'end');
+        input.focus();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     $('[data-bulk-meal-search]').on('input', function () {
         var searchTerm = String($(this).val() || '').trim().toLocaleLowerCase();
         $('[data-bulk-meal-row]').each(function () {

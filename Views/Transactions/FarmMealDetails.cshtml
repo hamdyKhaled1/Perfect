@@ -46,6 +46,7 @@
                     <th>القائم</th>
                     <th>الفارغ</th>
                     <th>الصافي</th>
+                    <th>ملاحظات بعد الصافي</th>
                     <th>سعر الكيلو</th>
                     <th>إجمالي الوجبة</th>
                     <th>الحالة</th>
@@ -61,6 +62,7 @@
                         <td>@transaction.GrossWeight.ToString("#,##0.####")</td>
                         <td>@transaction.EmptyWeight.ToString("#,##0.####")</td>
                         <td>@transaction.NetWeight.ToString("#,##0.####")</td>
+                        <td>@(string.IsNullOrWhiteSpace(transaction.GeneralNotes) ? "—" : transaction.GeneralNotes)</td>
                         <td>@transaction.PricePerKilo.ToString("#,##0.####")</td>
                         <td class="fw-bold">@transaction.MealTotal.ToString("#,##0.####")</td>
                         <td>
@@ -80,6 +82,7 @@
                 <tr class="table-dark fw-bold">
                     <td colspan="4">الإجمالي</td>
                     <td>@Model.NetWeight.ToString("#,##0.####")</td>
+                    <td></td>
                     <td></td>
                     <td>@Model.MealTotal.ToString("#,##0.####")</td>
                     <td></td>

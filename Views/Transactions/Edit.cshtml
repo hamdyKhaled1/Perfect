@@ -135,6 +135,12 @@
                         </label>
                         <input asp-for="GrossWeightExpression" type="text" class="form-control calc-input"
                                data-gross-weight-expression inputmode="decimal" placeholder="مثال: 900+15" />
+                        <div class="btn-group btn-group-sm w-100 mt-1" role="group" aria-label="عمليات القائم">
+                            <button type="button" class="btn btn-outline-secondary" data-expression-target="GrossWeightExpression" data-expression-operator="+">+</button>
+                            <button type="button" class="btn btn-outline-secondary" data-expression-target="GrossWeightExpression" data-expression-operator="-">−</button>
+                            <button type="button" class="btn btn-outline-secondary" data-expression-target="GrossWeightExpression" data-expression-operator="*">×</button>
+                            <button type="button" class="btn btn-outline-secondary" data-expression-target="GrossWeightExpression" data-expression-operator="/">÷</button>
+                        </div>
                         <span asp-validation-for="GrossWeightExpression" class="text-danger"></span>
                     </div>
 
@@ -144,6 +150,12 @@
                         </label>
                         <input asp-for="EmptyWeightExpression" type="text" class="form-control calc-input"
                                data-empty-weight-expression inputmode="decimal" placeholder="مثال: 8*12" />
+                        <div class="btn-group btn-group-sm w-100 mt-1" role="group" aria-label="عمليات الفارغ">
+                            <button type="button" class="btn btn-outline-secondary" data-expression-target="EmptyWeightExpression" data-expression-operator="+">+</button>
+                            <button type="button" class="btn btn-outline-secondary" data-expression-target="EmptyWeightExpression" data-expression-operator="-">−</button>
+                            <button type="button" class="btn btn-outline-secondary" data-expression-target="EmptyWeightExpression" data-expression-operator="*">×</button>
+                            <button type="button" class="btn btn-outline-secondary" data-expression-target="EmptyWeightExpression" data-expression-operator="/">÷</button>
+                        </div>
                         <span asp-validation-for="EmptyWeightExpression" class="text-danger"></span>
                     </div>
 

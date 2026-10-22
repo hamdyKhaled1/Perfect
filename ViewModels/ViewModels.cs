@@ -53,6 +53,8 @@ namespace HagImamAccounts.ViewModels
         public decimal OldBalance { get; set; }
         public string? GrossWeightExpression { get; set; }
         public string? EmptyWeightExpression { get; set; }
+        [StringLength(1000)]
+        public string? Notes { get; set; }
         public decimal PriceIncrement { get; set; }
     }
 
@@ -130,6 +132,52 @@ namespace HagImamAccounts.ViewModels
         public decimal Incoming { get; set; }
         public decimal Taken { get; set; }
         public decimal Balance { get; set; }
+    }
+
+    public class StripInventoryPageViewModel
+    {
+        public Models.StripCartonType SelectedCartonType { get; set; }
+        public int FiveKilogramBalance { get; set; }
+        public int NineHundredGramBalance { get; set; }
+        public List<StripInventoryEntryViewModel> Entries { get; set; } = new();
+        public StripInventoryEntryInputViewModel NewEntry { get; set; } = new();
+    }
+
+    public class StripInventoryOverviewViewModel
+    {
+        public int FiveKilogramBalance { get; set; }
+        public int NineHundredGramBalance { get; set; }
+    }
+
+    public class StripInventoryEntryViewModel
+    {
+        public DateTime Date { get; set; }
+        public string ReceivedBy { get; set; } = string.Empty;
+        public string Statement { get; set; } = string.Empty;
+        public int Incoming { get; set; }
+        public int Outgoing { get; set; }
+        public int Balance { get; set; }
+    }
+
+    public class StripInventoryEntryInputViewModel
+    {
+        public Models.StripCartonType CartonType { get; set; }
+
+        [Required(ErrorMessage = "اكتب اسم الشخص الذي استلم.")]
+        [StringLength(200)]
+        public string ReceivedBy { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "اكتب البيان.")]
+        [StringLength(500)]
+        public string Statement { get; set; } = string.Empty;
+
+        [Range(0, 1000000000, ErrorMessage = "عدد الكراتين الواردة غير صحيح.")]
+        public int Incoming { get; set; }
+
+        [Range(0, 1000000000, ErrorMessage = "عدد الكراتين المسحوبة غير صحيح.")]
+        public int Outgoing { get; set; }
+
+        public DateTime Date { get; set; } = DateTime.Today;
     }
 
     public class TreasuryAccountSummaryViewModel

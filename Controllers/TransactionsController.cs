@@ -192,6 +192,7 @@ namespace HagImamAccounts.Controllers
 
                 var hasInput = !string.IsNullOrWhiteSpace(row.GrossWeightExpression) ||
                                !string.IsNullOrWhiteSpace(row.EmptyWeightExpression) ||
+                               !string.IsNullOrWhiteSpace(row.Notes) ||
                                row.PriceIncrement != 0;
                 if (!hasInput)
                     continue;
@@ -249,6 +250,9 @@ namespace HagImamAccounts.Controllers
                     FarmPrice = model.FarmPrice,
                     ExtraField = entry.Row.PriceIncrement,
                     PricePerKilo = model.FarmPrice + entry.Row.PriceIncrement,
+                    GeneralNotes = string.IsNullOrWhiteSpace(entry.Row.Notes)
+                        ? null
+                        : entry.Row.Notes.Trim(),
                     IsDeleted = false
                 });
             }
@@ -401,6 +405,7 @@ namespace HagImamAccounts.Controllers
                         OldBalance = history.Sum(transaction => transaction.TotalDue),
                         GrossWeightExpression = submittedRow?.GrossWeightExpression ?? string.Empty,
                         EmptyWeightExpression = submittedRow?.EmptyWeightExpression ?? string.Empty,
+                        Notes = submittedRow?.Notes,
                         PriceIncrement = submittedRow?.PriceIncrement ?? 0
                     };
                 }).ToList()
@@ -639,7 +644,7 @@ namespace HagImamAccounts.Controllers
             };
 
             if (!string.IsNullOrWhiteSpace(meal.GeneralNotes))
-                lines.Add($"ملاحظات عامة: {meal.GeneralNotes}");
+                lines.Add($"ملاحظات بعد الصافي: {meal.GeneralNotes}");
 
             lines.Add($"إجمالي ما عليه: {Amount(accounting.SubTotal + meal.MealTotal)}");
 

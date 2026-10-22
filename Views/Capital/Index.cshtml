@@ -1,0 +1,74 @@
+@model HagImamAccounts.ViewModels.CapitalViewModel
+@{
+    ViewData["Title"] = "رأس مال الشركة";
+}
+
+<div class="fade-in">
+    <h3 class="fw-bold mb-4">
+        <i class="fas fa-chart-line me-2 text-success"></i>رأس مال الشركة
+    </h3>
+
+    <div class="card card-dashboard border-success mb-4">
+        <div class="card-body text-center py-4">
+            <div class="text-muted mb-2">إجمالي رأس المال</div>
+            <div class="display-4 fw-bold @(Model.TotalCapital < 0 ? "text-danger" : "text-success")">
+                @Model.TotalCapital.ToString("#,##0.####")
+            </div>
+            <div class="text-muted small mt-2">
+                العملاء + العملاء الخارج + الخزن والمحافظ - صافي المصروفات - حساب المزارع
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6 col-xl">
+            <div class="card card-dashboard h-100">
+                <div class="card-body">
+                    <div class="text-muted mb-1">أرصدة العملاء</div>
+                    <div class="fs-3 fw-bold">@Model.ClientBalances.ToString("#,##0.####")</div>
+                    <a asp-controller="Clients" asp-action="Index" class="btn btn-sm btn-outline-success mt-3">عرض العملاء</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl">
+            <div class="card card-dashboard h-100">
+                <div class="card-body">
+                    <div class="text-muted mb-1">أرصدة العملاء الخارج</div>
+                    <div class="fs-3 fw-bold">@Model.OutsideCustomerBalances.ToString("#,##0.####")</div>
+                    <a asp-controller="Outside" asp-action="Index" class="btn btn-sm btn-outline-success mt-3">عرض الخارج</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl">
+            <div class="card card-dashboard h-100">
+                <div class="card-body">
+                    <div class="text-muted mb-1">رصيد الخزن والمحافظ</div>
+                    <div class="fs-3 fw-bold">@Model.TreasuryBalance.ToString("#,##0.####")</div>
+                    <a asp-controller="Treasury" asp-action="Index" class="btn btn-sm btn-outline-success mt-3">عرض الخزن</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl">
+            <div class="card card-dashboard h-100">
+                <div class="card-body">
+                    <div class="text-muted mb-1">صافي المصروفات (الصادر - الوارد)</div>
+                    <div class="fs-3 fw-bold @(Model.NetExpenses > 0 ? "text-danger" : "text-success")">
+                        @Model.NetExpenses.ToString("#,##0.####")
+                    </div>
+                    <a asp-controller="Expenses" asp-action="Index" class="btn btn-sm btn-outline-success mt-3">عرض المصروفات</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl">
+            <div class="card card-dashboard h-100">
+                <div class="card-body">
+                    <div class="text-muted mb-1">المتبقي للمزارع</div>
+                    <div class="fs-3 fw-bold @(Model.FarmAccount > 0 ? "text-danger" : "text-success")">
+                        @Model.FarmAccount.ToString("#,##0.####")
+                    </div>
+                    <a asp-controller="Transactions" asp-action="FarmMeals" class="btn btn-sm btn-outline-success mt-3">عرض حساب المزارع</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

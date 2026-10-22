@@ -206,6 +206,43 @@ namespace HagImamAccounts.Migrations
                     b.ToTable("OutsideEntries");
                 });
 
+            modelBuilder.Entity("HagImamAccounts.Models.StripInventoryEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CartonType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Incoming")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Outgoing")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReceivedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CartonType", "Date", "Id");
+
+                    b.ToTable("StripInventoryEntries");
+                });
+
             modelBuilder.Entity("HagImamAccounts.Models.Transaction", b =>
                 {
                     b.Property<int>("Id")

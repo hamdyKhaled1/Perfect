@@ -16,6 +16,7 @@ namespace HagImamAccounts.Data
         public DbSet<Models.OutsideEntry> OutsideEntries { get; set; }
         public DbSet<Models.TreasuryEntry> TreasuryEntries { get; set; }
         public DbSet<Models.ExpenseEntry> ExpenseEntries { get; set; }
+        public DbSet<Models.StripInventoryEntry> StripInventoryEntries { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -92,6 +93,14 @@ namespace HagImamAccounts.Data
                     .WithMany()
                     .HasForeignKey(e => e.FarmMealBatchId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Models.StripInventoryEntry>(entity =>
+            {
+                entity.HasKey(entry => entry.Id);
+                entity.Property(entry => entry.ReceivedBy).IsRequired().HasMaxLength(200);
+                entity.Property(entry => entry.Statement).IsRequired().HasMaxLength(500);
+                entity.HasIndex(entry => new { entry.CartonType, entry.Date, entry.Id });
             });
 
             // Seed some sample data

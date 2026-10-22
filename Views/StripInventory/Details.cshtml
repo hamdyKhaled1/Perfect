@@ -1,0 +1,125 @@
+@model HagImamAccounts.ViewModels.StripInventoryPageViewModel
+@{
+    var selectedName = Model.SelectedCartonType == HagImamAccounts.Models.StripCartonType.FiveKilogram
+        ? "كراتين 5 كيلو"
+        : "كراتين 900 جرام";
+    ViewData["Title"] = selectedName;
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="fas fa-boxes-stacked me-2 text-success"></i>@selectedName
+        </h3>
+        <a asp-action="Index" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع لأنواع الاستربس
+        </a>
+    </div>
+
+    <div class="card card-dashboard border-success mb-4">
+        <div class="card-body">
+            <div class="text-muted">الرصيد الحالي</div>
+            <div class="display-6 fw-bold text-success">
+                @(Model.SelectedCartonType == HagImamAccounts.Models.StripCartonType.FiveKilogram
+                    ? Model.FiveKilogramBalance
+                    : Model.NineHundredGramBalance) كرتونة
+            </div>
+        </div>
+    </div>
+
+    <h5 class="fw-bold mb-3">حركات @selectedName</h5>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">تسجيل حركة</h5>
+            <form asp-action="AddEntry" method="post">
+                <input asp-for="NewEntry.CartonType" type="hidden" />
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label asp-for="NewEntry.Date" class="form-label">التاريخ</label>
+                        <input asp-for="NewEntry.Date" type="date" class="form-control" />
+                        <span asp-validation-for="NewEntry.Date" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="NewEntry.ReceivedBy" class="form-label">اللي استلم</label>
+                        <input asp-for="NewEntry.ReceivedBy" class="form-control" maxlength="200" />
+                        <span asp-validation-for="NewEntry.ReceivedBy" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="NewEntry.Statement" class="form-label">البيان</label>
+                        <input asp-for="NewEntry.Statement" class="form-control" maxlength="500" />
+                        <span asp-validation-for="NewEntry.Statement" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="NewEntry.Incoming" class="form-label">إضافة كراتين</label>
+                        <input asp-for="NewEntry.Incoming" type="number" min="0" step="1" class="form-control" />
+                        <span asp-validation-for="NewEntry.Incoming" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="NewEntry.Outgoing" class="form-label">سحب كراتين</label>
+                        <input asp-for="NewEntry.Outgoing" type="number" min="0" step="1" class="form-control" />
+                        <span asp-validation-for="NewEntry.Outgoing" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-success w-100" title="تسجيل الحركة">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <div class="text-muted small mt-2">أدخل العدد في خانة الإضافة أو السحب فقط. لا يمكن سحب أكثر من الرصيد المتاح.</div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>التاريخ</th>
+                    <th>اللي استلم</th>
+                    <th>البيان</th>
+                    <th>إضافة</th>
+                    <th>سحب</th>
+                    <th>الرصيد بعد الحركة</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Entries.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">لا توجد حركات مسجلة لهذا النوع من الكراتين.</td>
+                    </tr>
+                }
+                else
+                {
+                    @for (var index = 0; index < Model.Entries.Count; index++)
+                    {
+                        var entry = Model.Entries[index];
+                        <tr>
+                            <td>@(index + 1)</td>
+                            <td>@entry.Date.ToString("dd/MM/yyyy")</td>
+                            <td>@entry.ReceivedBy</td>
+                            <td>@entry.Statement</td>
+                            <td class="text-success">@entry.Incoming.ToString("#,##0")</td>
+                            <td class="text-danger">@entry.Outgoing.ToString("#,##0")</td>
+                            <td class="fw-bold">@entry.Balance.ToString("#,##0")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+            @if (Model.Entries.Count > 0)
+            {
+                <tfoot>
+                    <tr class="table-dark fw-bold">
+                        <td colspan="4">الإجمالي</td>
+                        <td>@Model.Entries.Sum(entry => entry.Incoming).ToString("#,##0")</td>
+                        <td>@Model.Entries.Sum(entry => entry.Outgoing).ToString("#,##0")</td>
+                        <td>@Model.Entries[^1].Balance.ToString("#,##0")</td>
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+</div>

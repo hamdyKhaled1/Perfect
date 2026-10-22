@@ -63,6 +63,7 @@
                         <th>القائم</th>
                         <th>الفارغ</th>
                         <th>الصافي</th>
+                        <th>ملاحظات بعد الصافي</th>
                         <th>زيادة السعر</th>
                         <th>سعر الكيلو</th>
                         <th>إجمالي الوجبة</th>
@@ -77,17 +78,36 @@
                             <td class="fw-bold text-nowrap" data-bulk-meal-client-name>@row.ClientName</td>
                             <td>
                                 <input type="text" name="Rows[@index].GrossWeightExpression" value="@row.GrossWeightExpression"
+                                       id="gross-expression-@index"
                                        class="form-control form-control-sm" data-bulk-meal-input data-gross-expression
                                        inputmode="decimal" maxlength="100" placeholder="مثال: 900+15" aria-label="القائم - @row.ClientName" />
+                                <div class="btn-group btn-group-sm w-100 mt-1" role="group" aria-label="عمليات القائم - @row.ClientName">
+                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="+">+</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="-">−</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="*">×</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="/">÷</button>
+                                </div>
                                 <span class="text-danger small" data-valmsg-for="Rows[@index].GrossWeightExpression"></span>
                             </td>
                             <td>
                                 <input type="text" name="Rows[@index].EmptyWeightExpression" value="@row.EmptyWeightExpression"
+                                       id="empty-expression-@index"
                                        class="form-control form-control-sm" data-bulk-meal-input data-empty-expression
                                        inputmode="decimal" maxlength="100" placeholder="مثال: 8*12" aria-label="الفارغ - @row.ClientName" />
+                                <div class="btn-group btn-group-sm w-100 mt-1" role="group" aria-label="عمليات الفارغ - @row.ClientName">
+                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="+">+</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="-">−</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="*">×</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="/">÷</button>
+                                </div>
                                 <span class="text-danger small" data-valmsg-for="Rows[@index].EmptyWeightExpression"></span>
                             </td>
                             <td class="text-nowrap" data-net-weight>0</td>
+                            <td>
+                                <input type="text" name="Rows[@index].Notes" value="@row.Notes"
+                                       class="form-control form-control-sm" maxlength="1000"
+                                       aria-label="ملاحظات بعد الصافي - @row.ClientName" />
+                            </td>
                             <td>
                                 <input type="number" name="Rows[@index].PriceIncrement" value="@row.PriceIncrement"
                                        class="form-control form-control-sm" data-bulk-meal-input data-price-increment
@@ -104,7 +124,7 @@
                         <td data-bulk-total-gross>0</td>
                         <td data-bulk-total-empty>0</td>
                         <td data-bulk-total-net>0</td>
-                        <td colspan="2"></td>
+                        <td colspan="3"></td>
                         <td data-bulk-total-meal>0</td>
                     </tr>
                 </tfoot>

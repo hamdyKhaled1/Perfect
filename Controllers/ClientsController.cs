@@ -46,7 +46,8 @@ namespace HagImamAccounts.Controllers
                     .Where(t => !t.IsDeleted)
                     .Sum(t => (decimal?)(
                         (t.GrossWeight - t.EmptyWeight) * t.PricePerKilo +
-                        t.OldBalance - t.CashCollection - t.ElectronicCollection - t.DiscountAmount)) ?? 0,
+                        t.OldBalance - t.CashCollection - t.ElectronicCollection +
+                        t.AdditionAmount - t.DiscountAmount)) ?? 0,
                 TransactionCount = c.Transactions.Count(t => !t.IsDeleted),
                 LastTransactionDate = c.Transactions
                     .Where(t => !t.IsDeleted)
