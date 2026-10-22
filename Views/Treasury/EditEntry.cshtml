@@ -1,0 +1,98 @@
+@model HagImamAccounts.ViewModels.TreasuryMovementViewModel
+@{
+    ViewData["Title"] = "تعديل حركة";
+    var isTransfer = Model.NewTransfer.Amount > 0;
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="fas fa-pen-to-square me-2 text-warning"></i>تعديل حركة - @Model.AccountName
+        </h3>
+        <a asp-action="Account" asp-route-account="@Model.Account" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع للحركات
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            @if (isTransfer)
+            {
+                <div class="alert alert-info">
+                    هذه الحركة جزء من تحويل إلى الخزنة العمومية. تعديلها سيحدّث مبلغ التحويل وبيانه وتاريخه في الطرفين.
+                </div>
+                <form asp-action="EditEntry" asp-route-account="@Model.Account" method="post">
+                    <input asp-for="NewEntry.Id" type="hidden" />
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-5">
+                            <label asp-for="NewTransfer.Statement" class="form-label">البيان</label>
+                            <input asp-for="NewTransfer.Statement" class="form-control" maxlength="400" />
+                            <span asp-validation-for="NewTransfer.Statement" class="text-danger small"></span>
+                        </div>
+                        <div class="col-sm-6 col-lg-2">
+                            <label asp-for="NewTransfer.Amount" class="form-label">مبلغ التحويل</label>
+                            <input asp-for="NewTransfer.Amount" type="number" min="0.0001" step="0.0001" class="form-control" />
+                            <span asp-validation-for="NewTransfer.Amount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-sm-6 col-lg-2">
+                            <label asp-for="NewTransfer.Date" class="form-label">التاريخ</label>
+                            <input asp-for="NewTransfer.Date" type="date" class="form-control" />
+                            <span asp-validation-for="NewTransfer.Date" class="text-danger small"></span>
+                        </div>
+                        <div class="col-lg-3">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-save me-1"></i> حفظ التعديلات
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <form asp-action="EditEntry" asp-route-account="@Model.Account" method="post">
+                    <input asp-for="NewEntry.Id" type="hidden" />
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-4">
+                            <label asp-for="NewEntry.Statement" class="form-label">البيان</label>
+                            <input asp-for="NewEntry.Statement" class="form-control" maxlength="500" />
+                            <span asp-validation-for="NewEntry.Statement" class="text-danger small"></span>
+                        </div>
+                        @if (Model.Account == HagImamAccounts.Models.TreasuryAccount.General)
+                        {
+                            <input asp-for="NewEntry.Incoming" type="hidden" value="0" />
+                            <div class="col-sm-6 col-lg-2">
+                                <label asp-for="NewEntry.Outgoing" class="form-label">صادر</label>
+                                <input asp-for="NewEntry.Outgoing" type="number" min="0" step="0.0001" class="form-control" />
+                                <span asp-validation-for="NewEntry.Outgoing" class="text-danger small"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-sm-6 col-lg-2">
+                                <label asp-for="NewEntry.Incoming" class="form-label">وارد</label>
+                                <input asp-for="NewEntry.Incoming" type="number" min="0" step="0.0001" class="form-control" />
+                                <span asp-validation-for="NewEntry.Incoming" class="text-danger small"></span>
+                            </div>
+                            <div class="col-sm-6 col-lg-2">
+                                <label asp-for="NewEntry.Outgoing" class="form-label">صادر</label>
+                                <input asp-for="NewEntry.Outgoing" type="number" min="0" step="0.0001" class="form-control" />
+                                <span asp-validation-for="NewEntry.Outgoing" class="text-danger small"></span>
+                            </div>
+                        }
+                        <div class="col-sm-6 col-lg-2">
+                            <label asp-for="NewEntry.Date" class="form-label">التاريخ</label>
+                            <input asp-for="NewEntry.Date" type="date" class="form-control" />
+                            <span asp-validation-for="NewEntry.Date" class="text-danger small"></span>
+                        </div>
+                        <div class="col-lg-2">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-save me-1"></i> حفظ التعديلات
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>

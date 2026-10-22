@@ -1,0 +1,170 @@
+@model HagImamAccounts.Models.FarmMealBatch
+@{
+    ViewData["Title"] = "تفاصيل الوجبات";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-clipboard-list me-2 text-success"></i>تفاصيل الوجبات الموزعة
+        </h4>
+        <a asp-action="FarmMeals" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع للأرشيف
+        </a>
+    </div>
+
+    <div class="form-section mb-4">
+        <h5 class="fw-bold mb-3">بيانات التوزيع</h5>
+        <div class="row g-3">
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">تاريخ التوزيع</div>
+                    <strong>@Model.Date.ToString("dd/MM/yyyy")</strong>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">اسم المزرعة</div>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.FarmName) ? "—" : Model.FarmName)</strong>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">سعر الكيلو الأساسي</div>
+                    <strong>@Model.FarmPrice.ToString("#,##0.####")</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>اسم العميل</th>
+                    <th>القائم</th>
+                    <th>الفارغ</th>
+                    <th>الصافي</th>
+                    <th>سعر الكيلو</th>
+                    <th>إجمالي الوجبة</th>
+                    <th>الحالة</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var index = 0; index < Model.Transactions.Count; index++)
+                {
+                    var transaction = Model.Transactions.ElementAt(index);
+                    <tr>
+                        <td>@(index + 1)</td>
+                        <td>@(transaction.Client?.Name ?? "عميل محذوف")</td>
+                        <td>@transaction.GrossWeight.ToString("#,##0.####")</td>
+                        <td>@transaction.EmptyWeight.ToString("#,##0.####")</td>
+                        <td>@transaction.NetWeight.ToString("#,##0.####")</td>
+                        <td>@transaction.PricePerKilo.ToString("#,##0.####")</td>
+                        <td class="fw-bold">@transaction.MealTotal.ToString("#,##0.####")</td>
+                        <td>
+                            @if (transaction.IsDeleted)
+                            {
+                                <span class="badge bg-secondary">محذوفة من حساب العميل</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">مسجلة</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="table-dark fw-bold">
+                    <td colspan="4">الإجمالي</td>
+                    <td>@Model.NetWeight.ToString("#,##0.####")</td>
+                    <td></td>
+                    <td>@Model.MealTotal.ToString("#,##0.####")</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="form-section mt-4">
+        <h5 class="fw-bold mb-3">ملخص التوزيع</h5>
+        <div class="row g-3">
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">وزن المزرعة</div>
+                    <strong>@Model.FarmWeight.ToString("#,##0.####")</strong>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">إجمالي الصافي الموزع</div>
+                    <strong>@Model.NetWeight.ToString("#,##0.####")</strong>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">فرق الميزان (وزن المزرعة - صافي الوجبات)</div>
+                    <strong>@Model.WeightDifference.ToString("#,##0.####")</strong>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">حساب المزرعة</div>
+                    <strong>@Model.FarmAccount.ToString("#,##0.####")</strong>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <form asp-action="UpdateFarmPayment" method="post" class="border rounded p-3 h-100">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <label for="amountPaid" class="form-label text-muted small">المبلغ المدفوع للمزرعة</label>
+                    <div class="input-group">
+                        <input id="amountPaid" name="amountPaid" type="number" min="0" step="0.01"
+                               value="@Model.FarmPaidAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                               class="form-control" data-farm-payment
+                               data-farm-account="@Model.FarmAccount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                        <button type="submit" class="btn btn-outline-success">حفظ</button>
+                    </div>
+                    <small class="text-muted">يتحدث المتبقي فورًا، ثم احفظ لتثبيت المبلغ.</small>
+                </form>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">المتبقي للمزرعة</div>
+                    <strong data-farm-remaining>@Model.RemainingFarmAccount.ToString("#,##0.####")</strong>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">إجمالي الوجبات</div>
+                    <strong>@Model.MealTotal.ToString("#,##0.####")</strong>
+                </div>
+            </div>
+
+            @section Scripts {
+                <script>
+                    (() => {
+                        const paymentInput = document.querySelector("[data-farm-payment]");
+                        const remainingOutput = document.querySelector("[data-farm-remaining]");
+                        if (!paymentInput || !remainingOutput) return;
+
+                        const farmAccount = Number(paymentInput.dataset.farmAccount);
+                        const formatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 });
+
+                        paymentInput.addEventListener("input", () => {
+                            const paidAmount = Number(paymentInput.value) || 0;
+                            remainingOutput.textContent = formatter.format(farmAccount - paidAmount);
+                        });
+                    })();
+                </script>
+            }
+            <div class="col-sm-6 col-lg-3">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">الأرباح</div>
+                    <strong>@Model.Profit.ToString("#,##0.####")</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,217 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace HagImamAccounts.ViewModels
+{
+    public class ClientListViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public decimal TotalDue { get; set; }
+        public int TransactionCount { get; set; }
+        public DateTime? LastTransactionDate { get; set; }
+    }
+
+    public class ClientProfileViewModel
+    {
+        public Models.Client Client { get; set; } = null!;
+        public List<Models.Transaction> Transactions { get; set; } = new();
+        public decimal OverallTotalDue { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
+    }
+
+    public class ClientFilterViewModel
+    {
+        public string? SearchTerm { get; set; }
+        public string? SortBy { get; set; } = "Name";
+        public string? SortDirection { get; set; } = "asc";
+        public List<ClientListViewModel> Clients { get; set; } = new();
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalCount { get; set; }
+        public decimal TotalDue { get; set; }
+        public int TotalTransactions { get; set; }
+        public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    }
+
+    public class BulkMealViewModel
+    {
+        public DateTime Date { get; set; } = DateTime.Today;
+        public string DateText { get; set; } = string.Empty;
+        public decimal FarmPrice { get; set; }
+        [StringLength(200)]
+        public string FarmName { get; set; } = string.Empty;
+        public decimal FarmWeight { get; set; }
+        public List<BulkMealRowViewModel> Rows { get; set; } = new();
+    }
+
+    public class BulkMealRowViewModel
+    {
+        public int ClientId { get; set; }
+        public string ClientName { get; set; } = string.Empty;
+        public decimal OldBalance { get; set; }
+        public string? GrossWeightExpression { get; set; }
+        public string? EmptyWeightExpression { get; set; }
+        public decimal PriceIncrement { get; set; }
+    }
+
+    public class InvoiceViewModel
+    {
+        public Models.Transaction Transaction { get; set; } = null!;
+        public Models.Transaction AccountingTransaction { get; set; } = null!;
+        public Models.Transaction MealTransaction { get; set; } = null!;
+    }
+
+    public class OutsidePageViewModel
+    {
+        public List<Models.OutsideCustomer> Customers { get; set; } = new();
+        public int? SelectedCustomerId { get; set; }
+        public string? SelectedCustomerName { get; set; }
+        public decimal RemainingBalance { get; set; }
+        public List<OutsideEntryViewModel> Entries { get; set; } = new();
+        public OutsideCustomerInputViewModel NewCustomer { get; set; } = new();
+        public OutsideEntryInputViewModel NewEntry { get; set; } = new();
+    }
+
+    public class OutsideCustomersViewModel
+    {
+        public string? SearchTerm { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalCount { get; set; }
+        public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+        public List<OutsideCustomerListItemViewModel> Customers { get; set; } = new();
+    }
+
+    public class OutsideCustomerListItemViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public int EntryCount { get; set; }
+        public DateTime? LastEntryDate { get; set; }
+        public decimal Balance { get; set; }
+    }
+
+    public class OutsideCustomerInputViewModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "اسم العميل مطلوب.")]
+        [StringLength(200)]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(20)]
+        public string? Phone { get; set; }
+    }
+
+    public class OutsideEntryInputViewModel
+    {
+        public int CustomerId { get; set; }
+
+        [Required(ErrorMessage = "اكتب البيان.")]
+        [StringLength(500)]
+        public string Statement { get; set; } = string.Empty;
+
+        [Range(typeof(decimal), "0", "9999999999999999", ErrorMessage = "الوارد لا يمكن أن يكون سالبًا.")]
+        public decimal Incoming { get; set; }
+
+        [Range(typeof(decimal), "0", "9999999999999999", ErrorMessage = "المبلغ الذي أخذه لا يمكن أن يكون سالبًا.")]
+        public decimal Taken { get; set; }
+
+        public DateTime Date { get; set; } = DateTime.Today;
+    }
+
+    public class OutsideEntryViewModel
+    {
+        public DateTime Date { get; set; }
+        public string Statement { get; set; } = string.Empty;
+        public decimal Incoming { get; set; }
+        public decimal Taken { get; set; }
+        public decimal Balance { get; set; }
+    }
+
+    public class TreasuryAccountSummaryViewModel
+    {
+        public Models.TreasuryAccount Account { get; set; }
+        public string AccountName { get; set; } = string.Empty;
+        public decimal Balance { get; set; }
+        public int EntryCount { get; set; }
+    }
+
+    public class TreasuryMovementViewModel
+    {
+        public Models.TreasuryAccount Account { get; set; }
+        public string AccountName { get; set; } = string.Empty;
+        public decimal Balance { get; set; }
+        public List<TreasuryMovementRowViewModel> Entries { get; set; } = new();
+        public TreasuryEntryInputViewModel NewEntry { get; set; } = new();
+        public TreasuryTransferInputViewModel NewTransfer { get; set; } = new();
+    }
+
+    public class TreasuryMovementRowViewModel
+    {
+        public int Id { get; set; }
+        public Models.TreasuryAccount Account { get; set; }
+        public DateTime Date { get; set; }
+        public string Statement { get; set; } = string.Empty;
+        public decimal Incoming { get; set; }
+        public decimal Outgoing { get; set; }
+        public decimal Balance { get; set; }
+        public bool IsTransfer { get; set; }
+    }
+
+    public class TreasuryEntryInputViewModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "اكتب البيان.")]
+        [StringLength(500)]
+        public string Statement { get; set; } = string.Empty;
+
+        [Range(typeof(decimal), "0", "99999999999999.9999", ErrorMessage = "قيمة الوارد غير صحيحة.")]
+        public decimal? Incoming { get; set; }
+
+        [Range(typeof(decimal), "0", "99999999999999.9999", ErrorMessage = "قيمة الصادر غير صحيحة.")]
+        public decimal? Outgoing { get; set; }
+
+        public DateTime Date { get; set; } = DateTime.Today;
+    }
+
+    public class TreasuryTransferInputViewModel
+    {
+        [Range(typeof(decimal), "0.0001", "99999999999999.9999", ErrorMessage = "أدخل مبلغ تحويل أكبر من صفر.")]
+        public decimal Amount { get; set; }
+
+        [Required(ErrorMessage = "اكتب بيان التحويل.")]
+        [StringLength(400)]
+        public string Statement { get; set; } = string.Empty;
+
+        public DateTime Date { get; set; } = DateTime.Today;
+    }
+
+    public class ExpenseLedgerViewModel
+    {
+        public List<Models.ExpenseEntry> Entries { get; set; } = new();
+        public ExpenseEntryInputViewModel NewEntry { get; set; } = new();
+        public decimal TotalIncoming { get; set; }
+        public decimal TotalOutgoing { get; set; }
+        public decimal Balance => TotalIncoming - TotalOutgoing;
+    }
+
+    public class ExpenseEntryInputViewModel
+    {
+        [Required(ErrorMessage = "اكتب البيان.")]
+        [StringLength(500)]
+        public string Statement { get; set; } = string.Empty;
+
+        [Range(typeof(decimal), "0", "99999999999999.9999", ErrorMessage = "قيمة الوارد غير صحيحة.")]
+        public decimal? Incoming { get; set; }
+
+        [Range(typeof(decimal), "0", "99999999999999.9999", ErrorMessage = "قيمة الصادر غير صحيحة.")]
+        public decimal? Outgoing { get; set; }
+
+        public DateTime Date { get; set; } = DateTime.Today;
+    }
+}

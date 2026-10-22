@@ -1,0 +1,218 @@
+@model Transaction
+@{
+    var isMealEntry = (ViewBag.ActiveStep as string) == "meal";
+    ViewData["Title"] = (isMealEntry ? "إضافة وجبة جديدة - " : "إضافة تحصيل جديدة - ") + ViewBag.ClientName;
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-plus-circle me-2 text-success"></i>
+            @(isMealEntry ? "إضافة وجبة جديدة - " : "إضافة تحصيل جديدة - ")
+            <span class="text-success">@ViewBag.ClientName</span>
+        </h4>
+        <a asp-controller="Clients" asp-action="Profile" asp-route-id="@Model.ClientId" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع للملف
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post" data-transaction-form data-active-step="@ViewBag.ActiveStep">
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+        <input type="hidden" asp-for="ClientId" />
+        <input type="hidden" name="formSection" value="@(ViewBag.ActiveStep ?? "accounts")" />
+
+        <div class="row g-4">
+            @if ((ViewBag.ActiveStep as string) != "meal")
+            {
+            <div class="col-12" data-transaction-step="accounts">
+                <div class="form-section">
+                    <h5><i class="fas fa-calculator me-2"></i>الحسابات</h5>
+
+                    <div class="mb-3">
+                        <label asp-for="Date" class="form-label">التاريخ</label>
+                        <input asp-for="Date" type="date" class="form-control"
+                               value="@Model.Date.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="OldBalance" class="form-label">
+                            <i class="fas fa-money-bill me-1"></i>فلوس عليه قديم
+                        </label>
+                        <input asp-for="OldBalance" type="number" step="0.01" class="form-control calc-input"
+                               id="OldBalance" asp-format="{0:0.##}" />
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="AdditionAmount" class="form-label"></label>
+                                <input asp-for="AdditionAmount" type="number" step="0.01" class="form-control calc-input"
+                                       id="AdditionAmount" value="0" />
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="AdditionNotes" class="form-label"></label>
+                                <input asp-for="AdditionNotes" class="form-control" placeholder="سبب الإضافة" />
+                                <span id="AdditionNotesValidation" class="text-danger" style="display:none">ملاحظات الإضافة مطلوبة عند إدخال مبلغ إضافة.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="CashCollection" class="form-label">
+                                    <i class="fas fa-hand-holding-usd me-1"></i>تحصيل نقدي
+                                </label>
+                                <input asp-for="CashCollection" type="number" step="0.01" class="form-control calc-input"
+                                       id="CashCollection" value="0" />
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="ElectronicCollection" class="form-label">
+                                    <i class="fas fa-credit-card me-1"></i>تحصيل إلكتروني
+                                </label>
+                                <input asp-for="ElectronicCollection" type="number" step="0.01" class="form-control calc-input"
+                                       id="ElectronicCollection" value="0" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">الباقي بعد التحصيل</label>
+                        <div class="calculated-field-display" id="remainingAfterCollection">0</div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="DiscountAmount" class="form-label">
+                                    <i class="fas fa-percentage me-1"></i>الخصم
+                                </label>
+                                <input asp-for="DiscountAmount" type="number" step="0.01" class="form-control calc-input"
+                                       id="DiscountAmount" value="0" />
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="DiscountNotes" class="form-label">ملاحظات الخصم</label>
+                                <input asp-for="DiscountNotes" class="form-control" placeholder="سبب الخصم" />
+                                <span id="DiscountNotesValidation" class="text-danger" style="display:none">ملاحظات الخصم مطلوبة عند إدخال خصم.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label fw-bold">الإجمالي</label>
+                        <div class="calculated-field-display" id="subTotal">0</div>
+                    </div>
+                </div>
+            </div>
+            }
+
+            @if ((ViewBag.ActiveStep as string) == "meal")
+            {
+            <div class="col-12" data-transaction-step="meal" style="display:none">
+                <div class="form-section">
+                    <h5><i class="fas fa-drumstick-bite me-2"></i>الوجبة</h5>
+                    <div class="alert alert-info">
+                        رصيد الحسابات السابق: <strong>@Model.OldBalance.ToString("#,##0.####")</strong>
+                    </div>
+                    <input type="hidden" asp-for="OldBalance" />
+
+                    <div class="mb-3">
+                        <label asp-for="FarmPrice" class="form-label"></label>
+                        <input asp-for="FarmPrice" type="number" step="0.01" class="form-control calc-input"
+                               id="FarmPrice" value="0" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="GrossWeight" class="form-label">
+                            <i class="fas fa-weight-hanging me-1"></i>القائم (الوزن الإجمالي)
+                        </label>
+                        <input asp-for="GrossWeightExpression" type="text" class="form-control calc-input"
+                               data-gross-weight-expression inputmode="decimal" placeholder="مثال: 900+15" />
+                        <span asp-validation-for="GrossWeightExpression" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="EmptyWeightExpression" class="form-label">
+                            <i class="fas fa-box me-1"></i>الفارغ
+                        </label>
+                        <input asp-for="EmptyWeightExpression" type="text" class="form-control calc-input"
+                               data-empty-weight-expression inputmode="decimal" placeholder="مثال: 8*12" />
+                        <span asp-validation-for="EmptyWeightExpression" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-balance-scale me-1"></i>الصافي
+                        </label>
+                        <div class="calculated-field-display" id="netWeight">0</div>
+                    </div>
+
+                    <hr />
+
+                    <div class="mb-3">
+                        <label asp-for="ExtraField" class="form-label"></label>
+                        <input asp-for="ExtraField" type="number" step="0.01" class="form-control calc-input"
+                               id="ExtraField" value="0" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PricePerKilo" class="form-label">
+                            <i class="fas fa-tag me-1"></i>سعر الكيلو
+                        </label>
+                           <input asp-for="PricePerKilo" type="number" step="0.01" class="form-control"
+                               id="PricePerKilo" value="0" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">إجمالي الوجبة (الصافي × سعر الكيلو)</label>
+                        <div class="meal-total-display" id="mealTotal">0</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold h5">إجمالي ما عليه</label>
+                        <div class="small text-muted mb-1">إجمالي الحسابات: <span data-account-total>0</span></div>
+                        <div class="total-due-display" id="totalDue">0</div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label asp-for="GeneralNotes" class="form-label">ملاحظات عامة</label>
+                        <textarea asp-for="GeneralNotes" class="form-control" rows="2" placeholder="ملاحظات (اختياري)"></textarea>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="d-flex justify-content-center gap-3 mt-4">
+            @if ((ViewBag.ActiveStep as string) != "meal")
+            {
+            <button type="submit" class="btn btn-primary btn-lg px-5"
+                    formaction="@Url.Action("CreateCollectionOnly", "Transactions")" data-transaction-collection-submit>
+                <i class="fas fa-save me-2"></i> حفظ التحصيل فقط
+            </button>
+            }
+            else
+            {
+            <button type="submit" class="btn btn-success btn-lg px-5"
+                    formaction="@Url.Action("CreateMealOnly", "Transactions")" data-transaction-submit>
+                <i class="fas fa-save me-2"></i> حفظ الوجبة فقط
+            </button>
+            }
+            <a asp-controller="Clients" asp-action="Profile" asp-route-id="@Model.ClientId"
+               class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-times me-1"></i> إلغاء
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,137 @@
+@model Transaction
+@{
+    ViewData["Title"] = "تفاصيل الوجبة";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-info-circle me-2 text-primary"></i>
+            تفاصيل الوجبة - <span class="text-primary">@Model.Client?.Name</span>
+        </h4>
+        <div class="d-flex gap-2 no-print">
+            <a asp-controller="Transactions" asp-action="Invoice" asp-route-id="@Model.Id"
+               class="btn btn-success">
+                <i class="fas fa-file-invoice me-1"></i> الفاتورة
+            </a>
+            <a asp-controller="Transactions" asp-action="Edit" asp-route-id="@Model.Id"
+               class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i> تعديل
+            </a>
+            <a asp-controller="Clients" asp-action="Profile" asp-route-id="@Model.ClientId"
+               class="btn btn-outline-dark">
+                <i class="fas fa-arrow-right me-1"></i> رجوع
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- الحسابات -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-dark text-white fw-bold">
+                    <i class="fas fa-calculator me-2"></i>الحسابات
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td class="fw-bold text-muted">التاريخ</td>
+                            <td>@Model.Date.ToString("yyyy/MM/dd")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">فلوس عليه قديم</td>
+                            <td>@Model.OldBalance.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">تحصيل نقدي</td>
+                            <td>@Model.CashCollection.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">تحصيل إلكتروني</td>
+                            <td>@Model.ElectronicCollection.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">الإضافة</td>
+                            <td>@Model.AdditionAmount.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">ملاحظات الإضافة</td>
+                            <td>@(Model.AdditionNotes ?? "-")</td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td class="fw-bold">الباقي بعد التحصيل</td>
+                            <td class="fw-bold">@Model.RemainingAfterCollection.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">الخصم</td>
+                            <td>@Model.DiscountAmount.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">ملاحظات الخصم</td>
+                            <td>@(Model.DiscountNotes ?? "-")</td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td class="fw-bold">الإجمالي</td>
+                            <td class="fw-bold fs-5">@Model.SubTotal.ToString("#,##0.####")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- الوجبة -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-dark text-white fw-bold">
+                    <i class="fas fa-drumstick-bite me-2"></i>الوجبة
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td class="fw-bold text-muted">القائم</td>
+                            <td>@Model.GrossWeight.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">الفارغ</td>
+                            <td>@Model.EmptyWeight.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td class="fw-bold">الصافي</td>
+                            <td class="fw-bold">@Model.NetWeight.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">سعر المزرعة</td>
+                            <td>@Model.FarmPrice.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">الزيادة على سعر المزرعة</td>
+                            <td>@Model.ExtraField.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">سعر الكيلو</td>
+                            <td>@Model.PricePerKilo.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr class="table-success">
+                            <td class="fw-bold">إجمالي الوجبة</td>
+                            <td class="fw-bold fs-5">@Model.MealTotal.ToString("#,##0.####")</td>
+                        </tr>
+                        <tr class="table-danger">
+                            <td class="fw-bold">إجمالي ما عليه</td>
+                            <td class="fw-bold fs-4">@Model.TotalDue.ToString("#,##0.####")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.GeneralNotes))
+    {
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="fw-bold"><i class="fas fa-sticky-note me-1"></i>ملاحظات عامة</h6>
+                <p class="mb-0">@Model.GeneralNotes</p>
+            </div>
+        </div>
+    }
+</div>
