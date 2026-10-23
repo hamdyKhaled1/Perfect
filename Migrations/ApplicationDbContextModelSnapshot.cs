@@ -206,6 +206,30 @@ namespace HagImamAccounts.Migrations
                     b.ToTable("OutsideEntries");
                 });
 
+            modelBuilder.Entity("HagImamAccounts.Models.StripCustomer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("StripCustomers");
+                });
+
             modelBuilder.Entity("HagImamAccounts.Models.StripInventoryEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -236,7 +260,12 @@ namespace HagImamAccounts.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int?>("StripCustomerId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("StripCustomerId");
 
                     b.HasIndex("CartonType", "Date", "Id");
 
@@ -374,6 +403,16 @@ namespace HagImamAccounts.Migrations
                     b.Navigation("Customer");
                 });
 
+            modelBuilder.Entity("HagImamAccounts.Models.StripInventoryEntry", b =>
+                {
+                    b.HasOne("HagImamAccounts.Models.StripCustomer", "Customer")
+                        .WithMany("Entries")
+                        .HasForeignKey("StripCustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("HagImamAccounts.Models.Transaction", b =>
                 {
                     b.HasOne("HagImamAccounts.Models.Client", "Client")
@@ -403,6 +442,11 @@ namespace HagImamAccounts.Migrations
                 });
 
             modelBuilder.Entity("HagImamAccounts.Models.OutsideCustomer", b =>
+                {
+                    b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.StripCustomer", b =>
                 {
                     b.Navigation("Entries");
                 });

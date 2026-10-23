@@ -122,6 +122,24 @@ namespace HagImamAccounts.Controllers
                 return View("Account", page);
             }
 
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            if (outgoing > 0)
+            {
+                var availableBalance = await _context.TreasuryEntries
+                    .Where(item => item.Account == account)
+                    .SumAsync(item => item.Incoming - item.Outgoing);
+
+                if (outgoing > availableBalance)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError(string.Empty, $"الرصيد غير كافٍ. الرصيد الحالي: {availableBalance:#,##0.####}.");
+
+                    var page = await BuildAccountPageAsync(account);
+                    page.NewEntry = entry;
+                    return View("Account", page);
+                }
+            }
+
             _context.TreasuryEntries.Add(new TreasuryEntry
             {
                 Account = account,
@@ -131,6 +149,7 @@ namespace HagImamAccounts.Controllers
                 Date = entry.Date.Date
             });
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             TempData["Success"] = "تم تسجيل الحركة في الخزنة بنجاح.";
 
             return RedirectToAction(nameof(Account), new { account });
@@ -207,6 +226,7 @@ namespace HagImamAccounts.Controllers
             if (!IsValidAccount(account))
                 return NotFound();
 
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             var existingEntry = await _context.TreasuryEntries
                 .FirstOrDefaultAsync(item => item.Id == entry.Id && item.Account == account);
             if (existingEntry == null)
@@ -251,8 +271,20 @@ namespace HagImamAccounts.Controllers
                     return View(BuildEditViewModel(account, entry, transfer));
                 }
 
-                var transferStatement = transfer.Statement.Trim();
                 var isSourceEntry = existingEntry.Outgoing > 0;
+                var sourceAccount = isSourceEntry ? account : pairedEntry.Account;
+                var sourceEntryId = isSourceEntry ? existingEntry.Id : pairedEntry.Id;
+                var availableBalance = await _context.TreasuryEntries
+                    .Where(item => item.Account == sourceAccount && item.Id != sourceEntryId)
+                    .SumAsync(item => item.Incoming - item.Outgoing);
+                if (transfer.Amount > availableBalance)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError(string.Empty, $"الرصيد غير كافٍ للتحويل. الرصيد المتاح: {availableBalance:#,##0.####}.");
+                    return View(BuildEditViewModel(account, entry, transfer));
+                }
+
+                var transferStatement = transfer.Statement.Trim();
                 existingEntry.Statement = isSourceEntry
                     ? $"تحويل إلى الخزنة العمومية: {transferStatement}"
                     : $"تحويل من {AccountName(pairedEntry.Account)}: {transferStatement}";
@@ -274,13 +306,25 @@ namespace HagImamAccounts.Controllers
             }
             else
             {
+                var outgoing = entry.Outgoing ?? 0;
+                var availableBalance = await _context.TreasuryEntries
+                    .Where(item => item.Account == account && item.Id != existingEntry.Id)
+                    .SumAsync(item => item.Incoming - item.Outgoing);
+                if (outgoing > availableBalance)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError(string.Empty, $"الرصيد غير كافٍ. الرصيد الحالي: {availableBalance:#,##0.####}.");
+                    return View(BuildEditViewModel(account, entry, transfer));
+                }
+
                 existingEntry.Statement = statement;
                 existingEntry.Incoming = entry.Incoming ?? 0;
-                existingEntry.Outgoing = entry.Outgoing ?? 0;
+                existingEntry.Outgoing = outgoing;
                 existingEntry.Date = entry.Date.Date;
             }
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             TempData["Success"] = isTransfer
                 ? "تم تعديل التحويل وتحديث طرفيه."
                 : "تم تعديل حركة الخزنة.";

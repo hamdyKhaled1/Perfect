@@ -8,6 +8,12 @@
         <i class="fas fa-boxes-stacked me-2 text-success"></i>مخزون الاستربس
     </h3>
 
+    <div class="mb-3 text-end">
+        <a asp-action="Customers" class="btn btn-outline-success">
+            <i class="fas fa-users me-1"></i> عملاء الاستربس
+        </a>
+    </div>
+
     <div class="row g-3">
         <div class="col-md-6">
             <a asp-action="Details" asp-route-cartonType="@HagImamAccounts.Models.StripCartonType.FiveKilogram"

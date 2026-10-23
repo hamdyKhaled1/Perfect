@@ -12,6 +12,8 @@ public class StripInventoryEntry
 {
     public int Id { get; set; }
 
+    public int? StripCustomerId { get; set; }
+
     public StripCartonType CartonType { get; set; }
 
     [Required]
@@ -27,4 +29,6 @@ public class StripInventoryEntry
     public int Outgoing { get; set; }
 
     public DateTime Date { get; set; }
+
+    public virtual StripCustomer? Customer { get; set; }
 }

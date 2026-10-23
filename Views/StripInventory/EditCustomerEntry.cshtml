@@ -1,0 +1,58 @@
+@model HagImamAccounts.ViewModels.StripCustomerEntryInputViewModel
+@{
+    ViewData["Title"] = "تعديل حركة عميل الاستربس";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="fas fa-pen-to-square me-2 text-warning"></i>تعديل حركة العميل
+        </h3>
+        <a asp-action="CustomerProfile" asp-route-id="@Model.CustomerId" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع للحركات
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="EditCustomerEntry" method="post">
+                <input asp-for="Id" type="hidden" />
+                <input asp-for="CustomerId" type="hidden" />
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label asp-for="CartonType" class="form-label">نوع الكراتين</label>
+                        <select asp-for="CartonType" class="form-select">
+                            <option value="@HagImamAccounts.Models.StripCartonType.FiveKilogram">5 كيلو</option>
+                            <option value="@HagImamAccounts.Models.StripCartonType.NineHundredGram">900 جرام</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Date" class="form-label">التاريخ</label>
+                        <input asp-for="Date" type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Statement" class="form-label">البيان</label>
+                        <input asp-for="Statement" class="form-control" maxlength="500" />
+                        <span asp-validation-for="Statement" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Outgoing" class="form-label">استلم من المخزن</label>
+                        <input asp-for="Outgoing" type="number" min="0" step="1" class="form-control" />
+                        <span asp-validation-for="Outgoing" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Incoming" class="form-label">مرتجع للمخزن</label>
+                        <input asp-for="Incoming" type="number" min="0" step="1" class="form-control" />
+                        <span asp-validation-for="Incoming" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-success w-100" title="حفظ التعديلات">
+                            <i class="fas fa-save"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

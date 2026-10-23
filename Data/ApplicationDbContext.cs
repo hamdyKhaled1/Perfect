@@ -14,6 +14,7 @@ namespace HagImamAccounts.Data
         public DbSet<Models.FarmMealBatch> FarmMealBatches { get; set; }
         public DbSet<Models.OutsideCustomer> OutsideCustomers { get; set; }
         public DbSet<Models.OutsideEntry> OutsideEntries { get; set; }
+        public DbSet<Models.StripCustomer> StripCustomers { get; set; }
         public DbSet<Models.TreasuryEntry> TreasuryEntries { get; set; }
         public DbSet<Models.ExpenseEntry> ExpenseEntries { get; set; }
         public DbSet<Models.StripInventoryEntry> StripInventoryEntries { get; set; }
@@ -101,6 +102,18 @@ namespace HagImamAccounts.Data
                 entity.Property(entry => entry.ReceivedBy).IsRequired().HasMaxLength(200);
                 entity.Property(entry => entry.Statement).IsRequired().HasMaxLength(500);
                 entity.HasIndex(entry => new { entry.CartonType, entry.Date, entry.Id });
+                entity.HasOne(entry => entry.Customer)
+                    .WithMany(customer => customer.Entries)
+                    .HasForeignKey(entry => entry.StripCustomerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Models.StripCustomer>(entity =>
+            {
+                entity.HasKey(customer => customer.Id);
+                entity.Property(customer => customer.Name).IsRequired().HasMaxLength(200);
+                entity.Property(customer => customer.Phone).HasMaxLength(20);
+                entity.HasIndex(customer => customer.Name);
             });
 
             // Seed some sample data

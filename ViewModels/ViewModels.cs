@@ -143,6 +143,80 @@ namespace HagImamAccounts.ViewModels
         public StripInventoryEntryInputViewModel NewEntry { get; set; } = new();
     }
 
+    public class StripCustomersViewModel
+    {
+        public string? SearchTerm { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalCount { get; set; }
+        public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+        public List<StripCustomerListItemViewModel> Customers { get; set; } = new();
+    }
+
+    public class StripCustomerListItemViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public int FiveKilogramBalance { get; set; }
+        public int NineHundredGramBalance { get; set; }
+        public int EntryCount { get; set; }
+        public DateTime? LastEntryDate { get; set; }
+    }
+
+    public class StripCustomerInputViewModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "اكتب اسم العميل.")]
+        [StringLength(200)]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(20)]
+        public string? Phone { get; set; }
+    }
+
+    public class StripCustomerProfileViewModel
+    {
+        public int CustomerId { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public int FiveKilogramBalance { get; set; }
+        public int NineHundredGramBalance { get; set; }
+        public List<StripCustomerEntryViewModel> Entries { get; set; } = new();
+        public StripCustomerEntryInputViewModel NewEntry { get; set; } = new();
+    }
+
+    public class StripCustomerEntryViewModel
+    {
+        public int Id { get; set; }
+        public Models.StripCartonType CartonType { get; set; }
+        public DateTime Date { get; set; }
+        public string Statement { get; set; } = string.Empty;
+        public int Incoming { get; set; }
+        public int Outgoing { get; set; }
+        public int Balance { get; set; }
+    }
+
+    public class StripCustomerEntryInputViewModel
+    {
+        public int Id { get; set; }
+        public int CustomerId { get; set; }
+        public Models.StripCartonType CartonType { get; set; }
+
+        [Required(ErrorMessage = "اكتب البيان.")]
+        [StringLength(500)]
+        public string Statement { get; set; } = string.Empty;
+
+        [Range(0, 1000000000, ErrorMessage = "عدد الكراتين الواردة غير صحيح.")]
+        public int Incoming { get; set; }
+
+        [Range(0, 1000000000, ErrorMessage = "عدد الكراتين المسحوبة غير صحيح.")]
+        public int Outgoing { get; set; }
+
+        public DateTime Date { get; set; } = DateTime.Today;
+    }
+
     public class StripInventoryOverviewViewModel
     {
         public int FiveKilogramBalance { get; set; }
@@ -151,6 +225,9 @@ namespace HagImamAccounts.ViewModels
 
     public class StripInventoryEntryViewModel
     {
+        public int Id { get; set; }
+        public int? CustomerId { get; set; }
+        public string? CustomerName { get; set; }
         public DateTime Date { get; set; }
         public string ReceivedBy { get; set; } = string.Empty;
         public string Statement { get; set; } = string.Empty;
