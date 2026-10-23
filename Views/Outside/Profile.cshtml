@@ -21,7 +21,9 @@
             <div class="card card-dashboard border-primary">
                 <div class="card-body">
                     <div class="text-danger">الباقي عليه</div>
-                    <div class="display-6 text-danger">@Model.RemainingBalance.ToString("#,##0.##")</div>
+                    <div class="display-6 @(Model.RemainingBalance > 0 ? "text-danger" : Model.RemainingBalance < 0 ? "text-primary" : "")">
+                        @Model.RemainingBalance.ToString("#,##0.##")
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,13 +95,14 @@
                     <th>له</th>
                     <th>عليه</th>
                     <th>الباقي عليه</th>
+                    <th>إجراءات</th>
                 </tr>
             </thead>
             <tbody>
                 @if (Model.Entries.Count == 0)
                 {
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">لا توجد حركات مسجلة لهذا العميل.</td>
+                        <td colspan="7" class="text-center text-muted py-4">لا توجد حركات مسجلة لهذا العميل.</td>
                     </tr>
                 }
                 else
@@ -113,7 +116,23 @@
                             <td>@entry.Statement</td>
                             <td>@entry.Incoming.ToString("#,##0.##")</td>
                             <td>@entry.Taken.ToString("#,##0.##")</td>
-                            <td class="fw-bold text-danger">@entry.Balance.ToString("#,##0.##")</td>
+                            <td class="fw-bold @(entry.Balance > 0 ? "text-danger" : entry.Balance < 0 ? "text-primary" : "")">
+                                @entry.Balance.ToString("#,##0.##")
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a asp-action="EditEntry" asp-route-id="@entry.Id"
+                                       class="btn btn-sm btn-outline-warning" title="تعديل الحركة">
+                                        <i class="fas fa-pen"></i>
+                                    </a>
+                                    <form asp-action="DeleteEntry" asp-route-id="@entry.Id" method="post"
+                                          data-confirm="هل أنت متأكد من حذف هذه الحركة؟">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف الحركة">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     }
                 }
@@ -125,7 +144,10 @@
                         <td colspan="3">الإجمالي</td>
                         <td>@Model.Entries.Sum(entry => entry.Incoming).ToString("#,##0.##")</td>
                         <td>@Model.Entries.Sum(entry => entry.Taken).ToString("#,##0.##")</td>
-                        <td class="text-danger">@Model.RemainingBalance.ToString("#,##0.##")</td>
+                        <td class="@(Model.RemainingBalance > 0 ? "text-danger" : Model.RemainingBalance < 0 ? "text-primary" : "")">
+                            @Model.RemainingBalance.ToString("#,##0.##")
+                        </td>
+                        <td></td>
                     </tr>
                 </tfoot>
             }

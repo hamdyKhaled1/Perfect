@@ -133,14 +133,6 @@ $(document).ready(function () {
         }
     });
 
-    // Search across all clients, not just the currently displayed page.
-    var clientSearchTimer;
-    $('#clientSearch').on('input', function () {
-        clearTimeout(clientSearchTimer);
-        clientSearchTimer = setTimeout(function () {
-            $('#clientFilterForm').trigger('submit');
-        }, 300);
-    });
 });
 
 function showTransactionStep(step) {
@@ -232,6 +224,9 @@ function updateBulkMealRow(row) {
     var emptyWeight = parseNumberExpression(row.find('[data-empty-expression]').val());
     var farmPrice = parseFloat($('[data-bulk-meal-farm-price]').val()) || 0;
     var priceIncrement = parseFloat(row.find('[data-price-increment]').val()) || 0;
+
+    row.find('[data-gross-total]').text(Number.isFinite(grossWeight) ? formatNumber(grossWeight) : '-');
+    row.find('[data-empty-total]').text(Number.isFinite(emptyWeight) ? formatNumber(emptyWeight) : '-');
 
     if (!Number.isFinite(grossWeight) || !Number.isFinite(emptyWeight)) {
         row.find('[data-net-weight], [data-meal-total]').text('-');

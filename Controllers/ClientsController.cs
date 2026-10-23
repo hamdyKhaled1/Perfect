@@ -20,14 +20,12 @@ namespace HagImamAccounts.Controllers
         public async Task<IActionResult> Index(
             string? searchTerm,
             string? sortBy,
-            string? sortDirection,
             int page = 1,
             int pageSize = 10)
         {
             page = Math.Max(page, 1);
             pageSize = pageSize is 10 or 25 or 50 ? pageSize : 10;
             sortBy = sortBy is "TotalDue" or "LastTransaction" ? sortBy : "Name";
-            sortDirection = sortDirection == "desc" ? "desc" : "asc";
 
             var clientsQuery = _context.Clients.Where(c => c.IsActive);
             if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -61,13 +59,10 @@ namespace HagImamAccounts.Controllers
             var totalTransactions = await clientQuery.SumAsync(c => (int?)c.TransactionCount) ?? 0;
             page = totalCount == 0 ? 1 : Math.Min(page, (int)Math.Ceiling(totalCount / (double)pageSize));
 
-            var orderedQuery = (sortBy, sortDirection) switch
+            var orderedQuery = sortBy switch
             {
-                ("TotalDue", "asc") => clientQuery.OrderBy(c => c.TotalDue).ThenBy(c => c.Id),
-                ("TotalDue", "desc") => clientQuery.OrderByDescending(c => c.TotalDue).ThenBy(c => c.Id),
-                ("LastTransaction", "asc") => clientQuery.OrderBy(c => c.LastTransactionDate).ThenBy(c => c.Id),
-                ("LastTransaction", "desc") => clientQuery.OrderByDescending(c => c.LastTransactionDate).ThenBy(c => c.Id),
-                ("Name", "desc") => clientQuery.OrderByDescending(c => c.Name).ThenBy(c => c.Id),
+                "TotalDue" => clientQuery.OrderBy(c => c.TotalDue).ThenBy(c => c.Id),
+                "LastTransaction" => clientQuery.OrderBy(c => c.LastTransactionDate).ThenBy(c => c.Id),
                 _ => clientQuery.OrderBy(c => c.Name).ThenBy(c => c.Id)
             };
             var clients = await orderedQuery
@@ -79,7 +74,6 @@ namespace HagImamAccounts.Controllers
             {
                 SearchTerm = searchTerm,
                 SortBy = sortBy,
-                SortDirection = sortDirection,
                 Clients = clients,
                 Page = page,
                 PageSize = pageSize,

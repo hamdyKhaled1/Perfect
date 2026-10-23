@@ -181,6 +181,67 @@ namespace HagImamAccounts.Controllers
             return RedirectToAction(nameof(Profile), new { id = entry.CustomerId });
         }
 
+        public async Task<IActionResult> EditEntry(int id)
+        {
+            var entry = await _context.OutsideEntries
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Id == id);
+            if (entry == null)
+                return NotFound();
+
+            return View(new OutsideEntryInputViewModel
+            {
+                Id = entry.Id,
+                CustomerId = entry.OutsideCustomerId,
+                Statement = entry.Statement,
+                Incoming = entry.Incoming,
+                Taken = entry.Taken,
+                Date = entry.Date
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditEntry(OutsideEntryInputViewModel model)
+        {
+            if (model.Incoming == 0 && model.Taken == 0)
+                ModelState.AddModelError(string.Empty, "أدخل مبلغًا في الوارد أو في خانة هو أخد.");
+
+            var entry = await _context.OutsideEntries
+                .FirstOrDefaultAsync(item => item.Id == model.Id);
+            if (entry == null)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            entry.Statement = model.Statement.Trim();
+            entry.Incoming = model.Incoming;
+            entry.Taken = model.Taken;
+            entry.Date = model.Date.Date;
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "تم تعديل الحركة بنجاح.";
+
+            return RedirectToAction(nameof(Profile), new { id = entry.OutsideCustomerId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteEntry(int id)
+        {
+            var entry = await _context.OutsideEntries
+                .FirstOrDefaultAsync(item => item.Id == id);
+            if (entry == null)
+                return NotFound();
+
+            var customerId = entry.OutsideCustomerId;
+            _context.OutsideEntries.Remove(entry);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "تم حذف الحركة بنجاح.";
+
+            return RedirectToAction(nameof(Profile), new { id = customerId });
+        }
+
         private async Task<OutsidePageViewModel> BuildPageAsync(
             int? customerId = null,
             OutsideCustomerInputViewModel? newCustomer = null,
@@ -224,6 +285,7 @@ namespace HagImamAccounts.Controllers
                 balance += entry.Taken - entry.Incoming;
                 page.Entries.Add(new OutsideEntryViewModel
                 {
+                    Id = entry.Id,
                     Date = entry.Date,
                     Statement = entry.Statement,
                     Incoming = entry.Incoming,

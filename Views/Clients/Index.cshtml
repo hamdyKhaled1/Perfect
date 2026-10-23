@@ -71,8 +71,13 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-6">
                 <label class="form-label"><i class="fas fa-search me-1"></i>بحث</label>
-                <input type="text" id="clientSearch" name="searchTerm" class="form-control" placeholder="ابحث بالاسم أو رقم التليفون..."
-                       value="@Model.SearchTerm" />
+                <div class="input-group">
+                    <input type="text" name="searchTerm" class="form-control" placeholder="ابحث بالاسم أو رقم التليفون..."
+                           value="@Model.SearchTerm" />
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-search me-1"></i> بحث
+                    </button>
+                </div>
             </div>
             <div class="col-md-6">
                 <div class="d-flex gap-2">
@@ -82,13 +87,6 @@
                             <option value="Name" selected="@(Model.SortBy == "Name")">الاسم</option>
                             <option value="TotalDue" selected="@(Model.SortBy == "TotalDue")">إجمالي ما عليه</option>
                             <option value="LastTransaction" selected="@(Model.SortBy == "LastTransaction")">آخر وجبة</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">الاتجاه</label>
-                        <select name="sortDirection" class="form-select" onchange="this.form.requestSubmit()">
-                            <option value="asc" selected="@(Model.SortDirection == "asc")">تصاعدي</option>
-                            <option value="desc" selected="@(Model.SortDirection == "desc")">تنازلي</option>
                         </select>
                     </div>
                     <div>
@@ -189,31 +187,26 @@
                 <ul class="pagination justify-content-center flex-wrap">
                     <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="1" asp-route-pageSize="@Model.PageSize"
-                           asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy"
-                           asp-route-sortDirection="@Model.SortDirection" aria-label="الصفحة الأولى">الأولى</a>
+                           asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy" aria-label="الصفحة الأولى">الأولى</a>
                     </li>
                     <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize"
-                           asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy"
-                           asp-route-sortDirection="@Model.SortDirection" aria-label="الصفحة السابقة">السابق</a>
+                           asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy" aria-label="الصفحة السابقة">السابق</a>
                     </li>
                     @for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++)
                     {
                         <li class="page-item @(pageNumber == Model.Page ? "active" : "")">
                             <a class="page-link" asp-action="Index" asp-route-page="@pageNumber" asp-route-pageSize="@Model.PageSize"
-                               asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy"
-                               asp-route-sortDirection="@Model.SortDirection">@pageNumber</a>
+                               asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy">@pageNumber</a>
                         </li>
                     }
                     <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize"
-                           asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy"
-                           asp-route-sortDirection="@Model.SortDirection" aria-label="الصفحة التالية">التالي</a>
+                           asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy" aria-label="الصفحة التالية">التالي</a>
                     </li>
                     <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@Model.TotalPages" asp-route-pageSize="@Model.PageSize"
-                           asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy"
-                           asp-route-sortDirection="@Model.SortDirection" aria-label="الصفحة الأخيرة">الأخيرة</a>
+                           asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy" aria-label="الصفحة الأخيرة">الأخيرة</a>
                     </li>
                 </ul>
             </nav>

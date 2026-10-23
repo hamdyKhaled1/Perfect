@@ -25,7 +25,6 @@ namespace HagImamAccounts.ViewModels
     {
         public string? SearchTerm { get; set; }
         public string? SortBy { get; set; } = "Name";
-        public string? SortDirection { get; set; } = "asc";
         public List<ClientListViewModel> Clients { get; set; } = new();
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
@@ -110,6 +109,7 @@ namespace HagImamAccounts.ViewModels
 
     public class OutsideEntryInputViewModel
     {
+        public int Id { get; set; }
         public int CustomerId { get; set; }
 
         [Required(ErrorMessage = "اكتب البيان.")]
@@ -127,6 +127,7 @@ namespace HagImamAccounts.ViewModels
 
     public class OutsideEntryViewModel
     {
+        public int Id { get; set; }
         public DateTime Date { get; set; }
         public string Statement { get; set; } = string.Empty;
         public decimal Incoming { get; set; }

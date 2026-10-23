@@ -81,11 +81,9 @@
                                        id="gross-expression-@index"
                                        class="form-control form-control-sm" data-bulk-meal-input data-gross-expression
                                        inputmode="decimal" maxlength="100" placeholder="مثال: 900+15" aria-label="القائم - @row.ClientName" />
-                                <div class="btn-group btn-group-sm w-100 mt-1" role="group" aria-label="عمليات القائم - @row.ClientName">
+                                <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي القائم - @row.ClientName">
                                     <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="+">+</button>
-                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="-">−</button>
-                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="*">×</button>
-                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="/">÷</button>
+                                    <span class="small text-muted text-nowrap">إجمالي القائم: <strong data-gross-total aria-live="polite">0</strong></span>
                                 </div>
                                 <span class="text-danger small" data-valmsg-for="Rows[@index].GrossWeightExpression"></span>
                             </td>
@@ -94,15 +92,13 @@
                                        id="empty-expression-@index"
                                        class="form-control form-control-sm" data-bulk-meal-input data-empty-expression
                                        inputmode="decimal" maxlength="100" placeholder="مثال: 8*12" aria-label="الفارغ - @row.ClientName" />
-                                <div class="btn-group btn-group-sm w-100 mt-1" role="group" aria-label="عمليات الفارغ - @row.ClientName">
-                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="+">+</button>
-                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="-">−</button>
+                                <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي الفارغ - @row.ClientName">
                                     <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="*">×</button>
-                                    <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="/">÷</button>
+                                    <span class="small text-muted text-nowrap">إجمالي الفارغ: <strong data-empty-total aria-live="polite">0</strong></span>
                                 </div>
                                 <span class="text-danger small" data-valmsg-for="Rows[@index].EmptyWeightExpression"></span>
                             </td>
-                            <td class="text-nowrap" data-net-weight>0</td>
+                            <td class="text-nowrap fw-bold text-danger" data-net-weight>0</td>
                             <td>
                                 <input type="text" name="Rows[@index].Notes" value="@row.Notes"
                                        class="form-control form-control-sm" maxlength="1000"

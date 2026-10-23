@@ -1,0 +1,52 @@
+@model OutsideEntryInputViewModel
+@{
+    ViewData["Title"] = "تعديل حركة عميل الخارج";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="fas fa-pen-to-square me-2 text-warning"></i>تعديل حركة
+        </h3>
+        <a asp-action="Profile" asp-route-id="@Model.CustomerId" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع للحركات
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="EditEntry" method="post">
+                <input asp-for="Id" type="hidden" />
+                <input asp-for="CustomerId" type="hidden" />
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label asp-for="Statement" class="form-label">البيان / الملاحظات</label>
+                        <input asp-for="Statement" class="form-control" maxlength="500" />
+                        <span asp-validation-for="Statement" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Taken" class="form-label">عليه</label>
+                        <input asp-for="Taken" type="number" min="0" step="0.01" class="form-control" />
+                        <span asp-validation-for="Taken" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Incoming" class="form-label">له</label>
+                        <input asp-for="Incoming" type="number" min="0" step="0.01" class="form-control" />
+                        <span asp-validation-for="Incoming" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Date" class="form-label">التاريخ</label>
+                        <input asp-for="Date" type="date" class="form-control" />
+                        <span asp-validation-for="Date" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-save me-1"></i> حفظ التعديلات
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
