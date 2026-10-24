@@ -136,6 +136,10 @@ namespace HagImamAccounts.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal FarmPrice { get; set; }
 
+        [Display(Name = "نوع الوجبة")]
+        [StringLength(100)]
+        public string? MealType { get; set; }
+
         /// <summary>
         /// سعر الكيلو
         /// </summary>

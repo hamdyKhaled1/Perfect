@@ -77,6 +77,7 @@
                         <th>القائم</th>
                         <th>الفارغ</th>
                         <th class="calculated-field">الصافي</th>
+                        <th>نوع الوجبة</th>
                         <th>سعر المزرعة</th>
                         <th>الزيادة على سعر المزرعة</th>
                         <th>سعر الكيلو</th>
@@ -104,6 +105,7 @@
                             <td>@t.GrossWeight.ToString("#,##0.####")</td>
                             <td>@t.EmptyWeight.ToString("#,##0.####")</td>
                             <td class="calculated-field fw-bold">@t.NetWeight.ToString("#,##0.####")</td>
+                            <td>@(string.IsNullOrWhiteSpace(t.MealType) ? "—" : t.MealType)</td>
                             <td>@t.FarmPrice.ToString("#,##0.####")</td>
                             <td>@t.ExtraField.ToString("#,##0.####")</td>
                             <td>@t.PricePerKilo.ToString("#,##0.####")</td>
@@ -346,6 +348,7 @@
                         <th>القائم</th>
                         <th>الفارغ</th>
                         <th class="calculated-field">الصافي</th>
+                        <th>نوع الوجبة</th>
                         <th>سعر المزرعة</th>
                         <th>الزيادة على سعر المزرعة</th>
                         <th>سعر الكيلو</th>
@@ -364,6 +367,7 @@
                             <td>@t.GrossWeight.ToString("#,##0.####")</td>
                             <td>@t.EmptyWeight.ToString("#,##0.####")</td>
                             <td class="calculated-field fw-bold">@t.NetWeight.ToString("#,##0.####")</td>
+                            <td>@(string.IsNullOrWhiteSpace(t.MealType) ? "—" : t.MealType)</td>
                             <td>@t.FarmPrice.ToString("#,##0.####")</td>
                             <td>@t.ExtraField.ToString("#,##0.####")</td>
                             <td>@t.PricePerKilo.ToString("#,##0.####")</td>

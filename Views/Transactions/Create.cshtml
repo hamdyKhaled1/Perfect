@@ -123,6 +123,12 @@
                     <input type="hidden" asp-for="OldBalance" />
 
                     <div class="mb-3">
+                        <label asp-for="MealType" class="form-label">نوع الوجبة</label>
+                        <input asp-for="MealType" class="form-control" maxlength="100" />
+                        <span asp-validation-for="MealType" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
                         <label asp-for="FarmPrice" class="form-label"></label>
                         <input asp-for="FarmPrice" type="number" step="0.01" class="form-control calc-input"
                                id="FarmPrice" value="0" />

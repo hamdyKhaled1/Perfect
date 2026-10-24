@@ -147,6 +147,9 @@ namespace HagImamAccounts.Migrations
                     b.Property<decimal>("NetWeight")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("PreviousFarmBalance")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.ToTable("FarmMealBatches");
@@ -327,6 +330,10 @@ namespace HagImamAccounts.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<string>("MealType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<decimal>("OldBalance")
                         .HasColumnType("decimal(18,2)");

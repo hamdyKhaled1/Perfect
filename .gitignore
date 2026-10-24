@@ -1,0 +1,8 @@
+.vs/
+bin/
+obj/
+NoLockBuild/
+*.user
+Properties/PublishProfiles/*.pubxml
+Properties/PublishProfiles/*.pubxml.user
+appsettings.json

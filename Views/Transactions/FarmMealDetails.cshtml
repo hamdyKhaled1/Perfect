@@ -46,6 +46,7 @@
                     <th>القائم</th>
                     <th>الفارغ</th>
                     <th>الصافي</th>
+                    <th>نوع الوجبة</th>
                     <th>ملاحظات بعد الصافي</th>
                     <th>سعر الكيلو</th>
                     <th>إجمالي الوجبة</th>
@@ -62,6 +63,7 @@
                         <td>@transaction.GrossWeight.ToString("#,##0.####")</td>
                         <td>@transaction.EmptyWeight.ToString("#,##0.####")</td>
                         <td>@transaction.NetWeight.ToString("#,##0.####")</td>
+                        <td>@(string.IsNullOrWhiteSpace(transaction.MealType) ? "—" : transaction.MealType)</td>
                         <td>@(string.IsNullOrWhiteSpace(transaction.GeneralNotes) ? "—" : transaction.GeneralNotes)</td>
                         <td>@transaction.PricePerKilo.ToString("#,##0.####")</td>
                         <td class="fw-bold">@transaction.MealTotal.ToString("#,##0.####")</td>
@@ -82,8 +84,7 @@
                 <tr class="table-dark fw-bold">
                     <td colspan="4">الإجمالي</td>
                     <td>@Model.NetWeight.ToString("#,##0.####")</td>
-                    <td></td>
-                    <td></td>
+                    <td colspan="3"></td>
                     <td>@Model.MealTotal.ToString("#,##0.####")</td>
                     <td></td>
                 </tr>
@@ -114,7 +115,7 @@
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="border rounded p-3 h-100">
-                    <div class="text-muted small">حساب المزرعة</div>
+                    <div class="text-muted small">حساب الوجبة الحالية</div>
                     <strong>@Model.FarmAccount.ToString("#,##0.####")</strong>
                 </div>
             </div>
@@ -126,7 +127,7 @@
                         <input id="amountPaid" name="amountPaid" type="number" min="0" step="0.01"
                                value="@Model.FarmPaidAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
                                class="form-control" data-farm-payment
-                               data-farm-account="@Model.FarmAccount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                               data-farm-account="@Model.TotalFarmAccount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
                         <button type="submit" class="btn btn-outline-success">حفظ</button>
                     </div>
                     <small class="text-muted">يتحدث المتبقي فورًا، ثم احفظ لتثبيت المبلغ.</small>

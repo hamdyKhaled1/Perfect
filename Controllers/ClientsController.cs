@@ -142,6 +142,7 @@ namespace HagImamAccounts.Controllers
                 "القائم",
                 "الفارغ",
                 "الصافي",
+                "نوع الوجبة",
                 "سعر المزرعة",
                 "الزيادة على سعر المزرعة",
                 "سعر الكيلو",
@@ -176,11 +177,12 @@ namespace HagImamAccounts.Controllers
                     worksheet.Cell(row, 11).Value = transaction.GrossWeight;
                     worksheet.Cell(row, 12).Value = transaction.EmptyWeight;
                     worksheet.Cell(row, 13).Value = transaction.NetWeight;
-                    worksheet.Cell(row, 14).Value = transaction.FarmPrice;
-                    worksheet.Cell(row, 15).Value = transaction.ExtraField;
-                    worksheet.Cell(row, 16).Value = transaction.PricePerKilo;
-                    worksheet.Cell(row, 17).Value = transaction.MealTotal;
-                    worksheet.Cell(row, 18).Value = transaction.TotalDue;
+                    worksheet.Cell(row, 14).Value = transaction.MealType ?? string.Empty;
+                    worksheet.Cell(row, 15).Value = transaction.FarmPrice;
+                    worksheet.Cell(row, 16).Value = transaction.ExtraField;
+                    worksheet.Cell(row, 17).Value = transaction.PricePerKilo;
+                    worksheet.Cell(row, 18).Value = transaction.MealTotal;
+                    worksheet.Cell(row, 19).Value = transaction.TotalDue;
                     row++;
                 }
             }
@@ -199,6 +201,7 @@ namespace HagImamAccounts.Controllers
             worksheet.Column(6).Style.Alignment.WrapText = true;
             worksheet.Column(9).Width = 35;
             worksheet.Column(9).Style.Alignment.WrapText = true;
+            worksheet.Column(14).Width = 20;
             if (lastRow > 1)
                 worksheet.Range(2, 2, lastRow, headers.Length).Style.NumberFormat.Format = "#,##0";
 

@@ -39,6 +39,8 @@ namespace HagImamAccounts.ViewModels
         public DateTime Date { get; set; } = DateTime.Today;
         public string DateText { get; set; } = string.Empty;
         public decimal FarmPrice { get; set; }
+        [StringLength(100)]
+        public string? MealType { get; set; }
         [StringLength(200)]
         public string FarmName { get; set; } = string.Empty;
         public decimal FarmWeight { get; set; }
@@ -55,6 +57,39 @@ namespace HagImamAccounts.ViewModels
         [StringLength(1000)]
         public string? Notes { get; set; }
         public decimal PriceIncrement { get; set; }
+    }
+
+    public class FarmMealArchiveViewModel
+    {
+        public List<Models.FarmMealBatch> Batches { get; set; } = new();
+        public string? FarmName { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalCount { get; set; }
+        public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    }
+
+    public class FarmMealEditViewModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "تاريخ الوجبات مطلوب.")]
+        [DataType(DataType.Date)]
+        public DateTime Date { get; set; }
+
+        [Required(ErrorMessage = "اسم المزرعة مطلوب.")]
+        [StringLength(200)]
+        public string FarmName { get; set; } = string.Empty;
+
+        [Range(typeof(decimal), "0", "9999999999999999", ErrorMessage = "سعر المزرعة لا يمكن أن يكون سالبًا.")]
+        public decimal FarmPrice { get; set; }
+
+        [Range(typeof(decimal), "0", "9999999999999999", ErrorMessage = "وزن المزرعة لا يمكن أن يكون سالبًا.")]
+        public decimal FarmWeight { get; set; }
+
+        public int ReturnPage { get; set; } = 1;
+        public int ReturnPageSize { get; set; } = 10;
+        public string? ReturnFarmName { get; set; }
     }
 
     public class InvoiceViewModel

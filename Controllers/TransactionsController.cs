@@ -10,6 +10,7 @@ namespace HagImamAccounts.Controllers
 {
     public class TransactionsController : Controller
     {
+        private const string BulkMealSavePassword = "123";
         private readonly ApplicationDbContext _context;
 
         public TransactionsController(ApplicationDbContext context)
@@ -58,6 +59,7 @@ namespace HagImamAccounts.Controllers
             if (ModelState.IsValid)
             {
                 transaction.PricePerKilo = transaction.FarmPrice + transaction.ExtraField;
+                transaction.MealType = NormalizeMealType(transaction.MealType);
                 transaction.IsDeleted = false;
                 _context.Add(transaction);
                 await _context.SaveChangesAsync();
@@ -121,6 +123,7 @@ namespace HagImamAccounts.Controllers
             if (ModelState.IsValid)
             {
                 transaction.PricePerKilo = transaction.FarmPrice + transaction.ExtraField;
+                transaction.MealType = NormalizeMealType(transaction.MealType);
                 transaction.IsDeleted = false;
                 _context.Add(transaction);
                 await _context.SaveChangesAsync();
@@ -137,14 +140,22 @@ namespace HagImamAccounts.Controllers
         // GET: Transactions/BulkMeal
         public async Task<IActionResult> BulkMeal()
         {
+            ViewBag.BulkMealSaved = TempData["BulkMealSaved"] is true;
             return View(await BuildBulkMealViewModelAsync());
         }
 
         // POST: Transactions/BulkMeal
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BulkMeal(BulkMealViewModel model)
+        public async Task<IActionResult> BulkMeal(BulkMealViewModel model, string? savePassword)
         {
+            model.MealType = NormalizeMealType(model.MealType);
+            if (savePassword != BulkMealSavePassword)
+            {
+                ModelState.AddModelError(string.Empty, "كلمة المرور غير صحيحة. أدخل كلمة المرور لحفظ الوجبات.");
+                return View(await BuildBulkMealViewModelAsync(model));
+            }
+
             if (!DateTime.TryParseExact(
                     model.DateText,
                     new[] { "d/M/yyyy", "dd/MM/yyyy", "yyyy-MM-dd" },
@@ -224,12 +235,22 @@ namespace HagImamAccounts.Controllers
             FarmMealBatch? farmBatch = null;
             if (entries.Count > 0)
             {
+                var farmName = model.FarmName?.Trim() ?? string.Empty;
+                var previousFarmBalance = string.IsNullOrEmpty(farmName)
+                    ? 0
+                    : await _context.FarmMealBatches
+                        .AsNoTracking()
+                        .Where(batch => batch.FarmName == farmName)
+                        .Select(batch => batch.FarmPrice * batch.FarmWeight - batch.FarmPaidAmount)
+                        .SumAsync();
+
                 farmBatch = new FarmMealBatch
                 {
                     Date = model.Date.Date,
-                    FarmName = model.FarmName.Trim(),
+                    FarmName = farmName,
                     FarmWeight = model.FarmWeight,
                     FarmPrice = model.FarmPrice,
+                    PreviousFarmBalance = previousFarmBalance,
                     NetWeight = netWeightTotal,
                     MealTotal = mealTotal
                 };
@@ -250,6 +271,7 @@ namespace HagImamAccounts.Controllers
                     FarmPrice = model.FarmPrice,
                     ExtraField = entry.Row.PriceIncrement,
                     PricePerKilo = model.FarmPrice + entry.Row.PriceIncrement,
+                    MealType = NormalizeMealType(model.MealType),
                     GeneralNotes = string.IsNullOrWhiteSpace(entry.Row.Notes)
                         ? null
                         : entry.Row.Notes.Trim(),
@@ -283,6 +305,7 @@ namespace HagImamAccounts.Controllers
 
                 await _context.SaveChangesAsync();
                 TempData["Success"] = $"تم إضافة الوجبات لعدد {entries.Count} عميل وتسجيل أرباحها في المصروفات.";
+                TempData["BulkMealSaved"] = true;
             }
             else
             {
@@ -292,24 +315,162 @@ namespace HagImamAccounts.Controllers
             return RedirectToAction(nameof(BulkMeal));
         }
 
-        public async Task<IActionResult> FarmMeals(string? farmName)
+        public async Task<IActionResult> FarmMeals(string? farmName, int page = 1, int pageSize = 10)
         {
             var query = _context.FarmMealBatches
                 .AsNoTracking()
-                .Include(batch => batch.Transactions)
                 .AsQueryable();
 
             var normalizedFarmName = farmName?.Trim();
             if (!string.IsNullOrEmpty(normalizedFarmName))
                 query = query.Where(batch => batch.FarmName.Contains(normalizedFarmName));
 
+            var totalCount = await query.CountAsync();
+            pageSize = pageSize is 10 or 25 or 50 ? pageSize : 10;
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            page = Math.Clamp(page, 1, Math.Max(totalPages, 1));
+
             var batches = await query
+                .Include(batch => batch.Transactions)
                 .OrderByDescending(batch => batch.Date)
                 .ThenByDescending(batch => batch.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            ViewBag.FarmName = normalizedFarmName;
-            return View(batches);
+            return View(new FarmMealArchiveViewModel
+            {
+                Batches = batches,
+                FarmName = normalizedFarmName,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditFarmMeal(int id, int page = 1, int pageSize = 10, string? farmName = null)
+        {
+            var batch = await _context.FarmMealBatches
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Id == id);
+            if (batch == null)
+                return NotFound();
+
+            return View(new FarmMealEditViewModel
+            {
+                Id = batch.Id,
+                Date = batch.Date,
+                FarmName = batch.FarmName,
+                FarmPrice = batch.FarmPrice,
+                FarmWeight = batch.FarmWeight,
+                ReturnPage = Math.Max(page, 1),
+                ReturnPageSize = pageSize is 10 or 25 or 50 ? pageSize : 10,
+                ReturnFarmName = farmName?.Trim()
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFarmMeal(FarmMealEditViewModel model)
+        {
+            model.FarmName = model.FarmName?.Trim() ?? string.Empty;
+            model.ReturnPage = Math.Max(model.ReturnPage, 1);
+            model.ReturnPageSize = model.ReturnPageSize is 10 or 25 or 50 ? model.ReturnPageSize : 10;
+            model.ReturnFarmName = model.ReturnFarmName?.Trim();
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var batch = await _context.FarmMealBatches
+                .Include(item => item.Transactions)
+                .FirstOrDefaultAsync(item => item.Id == model.Id);
+            if (batch == null)
+                return NotFound();
+
+            batch.Date = model.Date.Date;
+            batch.FarmName = model.FarmName;
+            batch.FarmPrice = model.FarmPrice;
+            batch.FarmWeight = model.FarmWeight;
+
+            var activeTransactions = batch.Transactions
+                .Where(transaction => !transaction.IsDeleted)
+                .ToList();
+            foreach (var transaction in batch.Transactions)
+            {
+                transaction.Date = batch.Date;
+                transaction.FarmPrice = batch.FarmPrice;
+                transaction.PricePerKilo = batch.FarmPrice + transaction.ExtraField;
+            }
+
+            batch.NetWeight = activeTransactions.Sum(transaction => transaction.NetWeight);
+            batch.MealTotal = activeTransactions.Sum(transaction => transaction.MealTotal);
+
+            var expense = await _context.ExpenseEntries
+                .FirstOrDefaultAsync(entry => entry.FarmMealBatchId == batch.Id);
+            var profit = batch.Profit;
+            if (profit == 0)
+            {
+                if (expense != null)
+                    _context.ExpenseEntries.Remove(expense);
+            }
+            else
+            {
+                expense ??= new ExpenseEntry { FarmMealBatchId = batch.Id };
+                expense.Date = batch.Date;
+                expense.Statement = profit > 0
+                    ? $"أرباح وجبات - {batch.FarmName}"
+                    : $"خسارة وجبات - {batch.FarmName}";
+                expense.Incoming = Math.Max(profit, 0);
+                expense.Outgoing = Math.Max(-profit, 0);
+                if (expense.Id == 0)
+                    _context.ExpenseEntries.Add(expense);
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "تم تعديل بيانات الوجبة بنجاح.";
+            return RedirectToAction(nameof(FarmMeals), new
+            {
+                page = model.ReturnPage,
+                pageSize = model.ReturnPageSize,
+                farmName = model.ReturnFarmName
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteFarmMeal(
+            int id,
+            int page = 1,
+            int pageSize = 10,
+            string? farmName = null)
+        {
+            var batch = await _context.FarmMealBatches
+                .Include(item => item.Transactions)
+                .FirstOrDefaultAsync(item => item.Id == id);
+            if (batch == null)
+                return NotFound();
+
+            foreach (var transaction in batch.Transactions)
+            {
+                transaction.IsDeleted = true;
+                transaction.FarmMealBatchId = null;
+            }
+
+            var expenses = await _context.ExpenseEntries
+                .Where(entry => entry.FarmMealBatchId == batch.Id)
+                .ToListAsync();
+            _context.ExpenseEntries.RemoveRange(expenses);
+            _context.FarmMealBatches.Remove(batch);
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "تم حذف الوجبة وتسجيلاتها المرتبطة.";
+            return RedirectToAction(nameof(FarmMeals), new
+            {
+                page = Math.Max(page, 1),
+                pageSize = pageSize is 10 or 25 or 50 ? pageSize : 10,
+                farmName = farmName?.Trim()
+            });
         }
 
         [HttpGet]
@@ -338,6 +499,15 @@ namespace HagImamAccounts.Controllers
 
             if (batch == null)
                 return NotFound();
+
+            batch.PreviousFarmBalance = await _context.FarmMealBatches
+                .AsNoTracking()
+                .Where(previousBatch =>
+                    previousBatch.Id < batch.Id &&
+                    previousBatch.FarmName == batch.FarmName)
+                .Select(previousBatch =>
+                    previousBatch.FarmPrice * previousBatch.FarmWeight - previousBatch.FarmPaidAmount)
+                .SumAsync();
 
             batch.Transactions = batch.Transactions
                 .OrderBy(transaction => transaction.Client?.Name)
@@ -392,6 +562,7 @@ namespace HagImamAccounts.Controllers
                 DateText = submitted?.DateText ?? (submitted?.Date ?? DateTime.Today)
                     .ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
                 FarmPrice = submitted?.FarmPrice ?? 0,
+                MealType = submitted?.MealType,
                 FarmName = submitted?.FarmName ?? string.Empty,
                 FarmWeight = submitted?.FarmWeight ?? 0,
                 Rows = clients.Select(client =>
@@ -461,6 +632,7 @@ namespace HagImamAccounts.Controllers
                         existingTransaction.ExtraField = transaction.ExtraField;
                         existingTransaction.FarmPrice = transaction.FarmPrice;
                         existingTransaction.PricePerKilo = transaction.FarmPrice + transaction.ExtraField;
+                        existingTransaction.MealType = NormalizeMealType(transaction.MealType);
                         existingTransaction.GeneralNotes = transaction.GeneralNotes;
                     }
                     else
@@ -596,7 +768,11 @@ namespace HagImamAccounts.Controllers
             transaction.ExtraField != 0 ||
             transaction.FarmPrice != 0 ||
             transaction.PricePerKilo != 0 ||
+            !string.IsNullOrWhiteSpace(transaction.MealType) ||
             !string.IsNullOrWhiteSpace(transaction.GeneralNotes);
+
+        private static string? NormalizeMealType(string? mealType) =>
+            string.IsNullOrWhiteSpace(mealType) ? null : mealType.Trim();
 
         private static string? NormalizeEgyptianPhoneNumber(string? phone)
         {
@@ -637,6 +813,7 @@ namespace HagImamAccounts.Controllers
                 $"القائم: {Amount(meal.GrossWeight)}",
                 $"الفارغ: {Amount(meal.EmptyWeight)}",
                 $"الصافي: {Amount(meal.NetWeight)}",
+                $"نوع الوجبة: {(string.IsNullOrWhiteSpace(meal.MealType) ? "غير محدد" : meal.MealType)}",
                 $"سعر الكيلو: {Amount(meal.PricePerKilo)}",
                 $"إجمالي الوجبة: {Amount(meal.MealTotal)}",
                 $"الإضافة: {Amount(accounting.AdditionAmount)}",

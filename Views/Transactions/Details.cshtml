@@ -100,6 +100,10 @@
                             <td class="fw-bold">@Model.NetWeight.ToString("#,##0.####")</td>
                         </tr>
                         <tr>
+                            <td class="fw-bold text-muted">نوع الوجبة</td>
+                            <td>@(string.IsNullOrWhiteSpace(Model.MealType) ? "—" : Model.MealType)</td>
+                        </tr>
+                        <tr>
                             <td class="fw-bold text-muted">سعر المزرعة</td>
                             <td>@Model.FarmPrice.ToString("#,##0.####")</td>
                         </tr>

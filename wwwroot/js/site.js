@@ -56,6 +56,125 @@ $(document).ready(function () {
     updateAdditionNotesValidation();
     updateDiscountNotesValidation();
 
+    var bulkMealForm = $('[data-bulk-meal-form]');
+    if (bulkMealForm.length) {
+        var bulkMealDraftKey = 'bulk-meal-draft:' + window.location.pathname;
+        var draftStatus = bulkMealForm.find('[data-bulk-meal-draft-status]');
+        var bulkMealPasswordConfirmed = false;
+        var bulkMealPasswordModalElement = document.getElementById('bulkMealPasswordModal');
+        var bulkMealPasswordModal = bootstrap.Modal.getOrCreateInstance(bulkMealPasswordModalElement);
+
+        function showDraftStorageError(message, error) {
+            console.error(message, error);
+            draftStatus.text('تعذر التعامل مع مسودة الوجبات في هذا المتصفح. تأكد من حفظ الوجبات قبل إغلاق الصفحة.')
+                .removeClass('d-none');
+        }
+
+        function getBulkMealDraft() {
+            var draft = { fields: {}, rows: {} };
+            bulkMealForm.find(':input[name]').each(function () {
+                var input = $(this);
+                if (input.attr('type') === 'hidden') return;
+
+                var match = input.attr('name').match(/^Rows\[(\d+)\]\.(.+)$/);
+                if (!match) {
+                    draft.fields[input.attr('name')] = input.val();
+                    return;
+                }
+
+                var row = input.closest('[data-bulk-meal-row]');
+                var clientId = row.find('input[name$=".ClientId"]').val();
+                if (!clientId) return;
+
+                draft.rows[clientId] = draft.rows[clientId] || {};
+                draft.rows[clientId][match[2]] = input.val();
+            });
+            return draft;
+        }
+
+        function applyBulkMealDraft(draft) {
+            bulkMealForm.find(':input[name]').each(function () {
+                var input = $(this);
+                if (input.attr('type') === 'hidden') return;
+
+                var match = input.attr('name').match(/^Rows\[(\d+)\]\.(.+)$/);
+                if (!match) {
+                    if (Object.prototype.hasOwnProperty.call(draft.fields || {}, input.attr('name'))) {
+                        input.val(draft.fields[input.attr('name')]);
+                    }
+                    return;
+                }
+
+                var clientId = input.closest('[data-bulk-meal-row]')
+                    .find('input[name$=".ClientId"]').val();
+                var rowDraft = (draft.rows || {})[clientId];
+                if (rowDraft && Object.prototype.hasOwnProperty.call(rowDraft, match[2])) {
+                    input.val(rowDraft[match[2]]);
+                }
+            });
+        }
+
+        if (bulkMealForm.attr('data-bulk-meal-saved') === 'true') {
+            try {
+                localStorage.removeItem(bulkMealDraftKey);
+            } catch (error) {
+                showDraftStorageError('Unable to clear the saved bulk meal draft.', error);
+            }
+        } else {
+            try {
+                var savedDraft = localStorage.getItem(bulkMealDraftKey);
+                if (savedDraft) applyBulkMealDraft(JSON.parse(savedDraft));
+            } catch (error) {
+                showDraftStorageError('Unable to restore the bulk meal draft.', error);
+            }
+        }
+
+        bulkMealForm.on('input change', ':input[name]', function () {
+            try {
+                localStorage.setItem(bulkMealDraftKey, JSON.stringify(getBulkMealDraft()));
+            } catch (error) {
+                showDraftStorageError('Unable to save the bulk meal draft.', error);
+            }
+        });
+        bulkMealForm.on('submit', function (event) {
+            if (!bulkMealPasswordConfirmed) {
+                event.preventDefault();
+                bulkMealPasswordModal.show();
+                window.setTimeout(function () {
+                    $('[data-bulk-meal-save-password-input]').trigger('focus');
+                }, 150);
+                return;
+            }
+
+            try {
+                localStorage.setItem(bulkMealDraftKey, JSON.stringify(getBulkMealDraft()));
+            } catch (error) {
+                showDraftStorageError('Unable to save the bulk meal draft.', error);
+            }
+        });
+        $('[data-bulk-meal-password-confirm]').on('click', function () {
+            var password = $('[data-bulk-meal-save-password-input]').val();
+            if (!password) {
+                $('[data-bulk-meal-password-error]').removeClass('d-none');
+                return;
+            }
+
+            $('[data-bulk-meal-password-error]').addClass('d-none');
+            bulkMealForm.find('[data-bulk-meal-save-password]').val(password);
+            bulkMealPasswordConfirmed = true;
+            bulkMealPasswordModal.hide();
+            bulkMealForm[0].requestSubmit();
+        });
+        $('[data-bulk-meal-save-password-input]').on('input', function () {
+            $('[data-bulk-meal-password-error]').addClass('d-none');
+        }).on('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                $('[data-bulk-meal-password-confirm]').trigger('click');
+            }
+        });
+    }
+
     $('[data-bulk-meal-input]').on('input change', function () {
         updateBulkMealRow($(this).closest('[data-bulk-meal-row]'));
         updateBulkMealTotals();
@@ -70,13 +189,69 @@ $(document).ready(function () {
         input.focus();
         input.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    $('[data-bulk-meal-search]').on('input', function () {
-        var searchTerm = String($(this).val() || '').trim().toLocaleLowerCase();
-        $('[data-bulk-meal-row]').each(function () {
+    var bulkMealRows = $('[data-bulk-meal-row]');
+    var bulkMealPage = 1;
+    function updateBulkMealPagination() {
+        var searchTerm = String($('[data-bulk-meal-search]').val() || '').trim().toLocaleLowerCase();
+        var pageSize = parseInt($('[data-bulk-meal-page-size]').val(), 10) || 10;
+        var matchingRows = bulkMealRows.filter(function () {
             var clientName = $(this).find('[data-bulk-meal-client-name]').text().toLocaleLowerCase();
-            $(this).toggle(clientName.indexOf(searchTerm) !== -1);
+            return clientName.indexOf(searchTerm) !== -1;
         });
+        var totalPages = Math.ceil(matchingRows.length / pageSize);
+        bulkMealPage = Math.min(Math.max(bulkMealPage, 1), Math.max(totalPages, 1));
+        var firstRow = (bulkMealPage - 1) * pageSize;
+
+        bulkMealRows.hide();
+        matchingRows.slice(firstRow, firstRow + pageSize).show();
+
+        var pagination = $('[data-bulk-meal-pagination]');
+        var pageLinks = $('[data-bulk-meal-page-links]').empty();
+        pagination.toggle(matchingRows.length > 0);
+        if (!matchingRows.length) return;
+
+        $('[data-bulk-meal-page-summary]').text(
+            'عرض ' + (firstRow + 1) + ' إلى ' + Math.min(firstRow + pageSize, matchingRows.length) +
+            ' من ' + matchingRows.length + ' عميل');
+
+        var firstPage = Math.max(1, bulkMealPage - 2);
+        var lastPage = Math.min(totalPages, firstPage + 4);
+        firstPage = Math.max(1, lastPage - 4);
+
+        function addPageLink(label, pageNumber, disabled, active) {
+            var item = $('<li>').addClass('page-item')
+                .toggleClass('disabled', disabled)
+                .toggleClass('active', active);
+            var link = $('<button type="button">').addClass('page-link').text(label)
+                .attr('aria-label', label)
+                .prop('disabled', disabled)
+                .on('click', function () {
+                    bulkMealPage = pageNumber;
+                    updateBulkMealPagination();
+                });
+            item.append(link);
+            pageLinks.append(item);
+        }
+
+        if (totalPages > 1) {
+            addPageLink('الأولى', 1, bulkMealPage === 1, false);
+            addPageLink('السابق', bulkMealPage - 1, bulkMealPage === 1, false);
+            for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++) {
+                addPageLink(String(pageNumber), pageNumber, false, pageNumber === bulkMealPage);
+            }
+            addPageLink('التالي', bulkMealPage + 1, bulkMealPage === totalPages, false);
+            addPageLink('الأخيرة', totalPages, bulkMealPage === totalPages, false);
+        }
+    }
+    $('[data-bulk-meal-search]').on('input', function () {
+        bulkMealPage = 1;
+        updateBulkMealPagination();
     });
+    $('[data-bulk-meal-page-size]').on('change', function () {
+        bulkMealPage = 1;
+        updateBulkMealPagination();
+    });
+    updateBulkMealPagination();
     $('[data-bulk-meal-farm-price]').on('input change', function () {
         $('[data-bulk-meal-row]').each(function () {
             updateBulkMealRow($(this));

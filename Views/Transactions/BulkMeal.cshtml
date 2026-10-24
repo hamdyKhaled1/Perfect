@@ -18,8 +18,11 @@
         </div>
     </div>
 
-    <form asp-action="BulkMeal" method="post">
+    <form asp-action="BulkMeal" method="post"
+          data-bulk-meal-form data-bulk-meal-saved="@(ViewBag.BulkMealSaved == true ? "true" : "false")">
+        <input type="hidden" name="savePassword" data-bulk-meal-save-password />
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
+        <div class="alert alert-warning d-none" role="alert" data-bulk-meal-draft-status></div>
 
         <div class="form-section mb-4">
             <div class="row g-3 align-items-end">
@@ -36,6 +39,12 @@
                     <span asp-validation-for="FarmName" class="text-danger small"></span>
                 </div>
                 <div class="col-sm-6 col-md-3">
+                    <label asp-for="MealType" class="form-label">نوع الوجبة</label>
+                    <input asp-for="MealType" class="form-control" maxlength="100"
+                           placeholder="مثال: دواجن، بط، ..." />
+                    <span asp-validation-for="MealType" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6 col-md-3">
                     <label asp-for="FarmPrice" class="form-label">سعر المزرعة</label>
                     <input asp-for="FarmPrice" type="number" step="0.01" min="0" class="form-control"
                            data-bulk-meal-farm-price />
@@ -46,11 +55,19 @@
             </div>
         </div>
 
-        <div class="row mb-3">
+        <div class="row mb-3 align-items-end">
             <div class="col-md-4">
                 <label for="bulkMealClientSearch" class="form-label">بحث باسم العميل</label>
                 <input id="bulkMealClientSearch" type="search" class="form-control"
                        placeholder="اكتب اسم العميل..." data-bulk-meal-search />
+            </div>
+            <div class="col-sm-4 col-md-2">
+                <label for="bulkMealPageSize" class="form-label">العملاء بالصفحة</label>
+                <select id="bulkMealPageSize" class="form-select" data-bulk-meal-page-size>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
             </div>
         </div>
 
@@ -80,7 +97,7 @@
                                 <input type="text" name="Rows[@index].GrossWeightExpression" value="@row.GrossWeightExpression"
                                        id="gross-expression-@index"
                                        class="form-control form-control-sm" data-bulk-meal-input data-gross-expression
-                                       inputmode="decimal" maxlength="100" placeholder="مثال: 900+15" aria-label="القائم - @row.ClientName" />
+                                       dir="ltr" inputmode="decimal" maxlength="100" placeholder="مثال: 900+15" aria-label="القائم - @row.ClientName" />
                                 <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي القائم - @row.ClientName">
                                     <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="+">+</button>
                                     <span class="small text-muted text-nowrap">إجمالي القائم: <strong data-gross-total aria-live="polite">0</strong></span>
@@ -91,7 +108,7 @@
                                 <input type="text" name="Rows[@index].EmptyWeightExpression" value="@row.EmptyWeightExpression"
                                        id="empty-expression-@index"
                                        class="form-control form-control-sm" data-bulk-meal-input data-empty-expression
-                                       inputmode="decimal" maxlength="100" placeholder="مثال: 8*12" aria-label="الفارغ - @row.ClientName" />
+                                       dir="ltr" inputmode="decimal" maxlength="100" placeholder="مثال: 8*12" aria-label="الفارغ - @row.ClientName" />
                                 <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي الفارغ - @row.ClientName">
                                     <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="*">×</button>
                                     <span class="small text-muted text-nowrap">إجمالي الفارغ: <strong data-empty-total aria-live="polite">0</strong></span>
@@ -125,6 +142,13 @@
                     </tr>
                 </tfoot>
             </table>
+        </div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3"
+             data-bulk-meal-pagination>
+            <span class="text-muted" data-bulk-meal-page-summary aria-live="polite"></span>
+            <nav aria-label="التنقل بين صفحات العملاء">
+                <ul class="pagination mb-0" data-bulk-meal-page-links></ul>
+            </nav>
         </div>
 
         <div class="form-section mt-4">
@@ -181,6 +205,32 @@
             <button type="submit" class="btn btn-success btn-lg px-5">
                 <i class="fas fa-save me-2"></i> حفظ الوجبات المدخلة
             </button>
+        </div>
+
+        <div class="modal fade" id="bulkMealPasswordModal" tabindex="-1"
+             aria-labelledby="bulkMealPasswordModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="bulkMealPasswordModalLabel">تأكيد حفظ الوجبات</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="bulkMealSavePasswordInput" class="form-label">أدخل كلمة المرور لحفظ الوجبات</label>
+                        <input id="bulkMealSavePasswordInput" type="password" class="form-control"
+                               autocomplete="current-password" data-bulk-meal-save-password-input />
+                        <div class="text-danger small mt-2 d-none" data-bulk-meal-password-error>
+                            كلمة المرور مطلوبة.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="button" class="btn btn-success" data-bulk-meal-password-confirm>
+                            <i class="fas fa-check me-1"></i> تأكيد الحفظ
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </form>
 </div>
