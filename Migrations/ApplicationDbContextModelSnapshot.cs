@@ -22,6 +22,63 @@ namespace HagImamAccounts.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("HagImamAccounts.Models.CapitalAdjustment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date", "Id");
+
+                    b.ToTable("CapitalAdjustments");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.CapitalSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ClientBalances")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("FarmAccount")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("ManualCapital")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("NetExpensesWithoutTreasury")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("OutsideCustomerBalances")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("TreasuryBalance")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CapitalSettings");
+                });
+
             modelBuilder.Entity("HagImamAccounts.Models.Client", b =>
                 {
                     b.Property<int>("Id")
@@ -33,7 +90,16 @@ namespace HagImamAccounts.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal>("DefaultPanehPriceIncrement")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DefaultPriceIncrement")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFridge")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
@@ -60,7 +126,10 @@ namespace HagImamAccounts.Migrations
                         {
                             Id = 1,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultPanehPriceIncrement = 0m,
+                            DefaultPriceIncrement = 0m,
                             IsActive = true,
+                            IsFridge = false,
                             Name = "أحمد محمد",
                             Phone = "01012345678"
                         },
@@ -68,7 +137,10 @@ namespace HagImamAccounts.Migrations
                         {
                             Id = 2,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultPanehPriceIncrement = 0m,
+                            DefaultPriceIncrement = 0m,
                             IsActive = true,
+                            IsFridge = false,
                             Name = "محمود علي",
                             Phone = "01098765432"
                         },
@@ -76,10 +148,158 @@ namespace HagImamAccounts.Migrations
                         {
                             Id = 3,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultPanehPriceIncrement = 0m,
+                            DefaultPriceIncrement = 0m,
                             IsActive = true,
+                            IsFridge = false,
                             Name = "حسن إبراهيم",
                             Phone = "01155555555"
                         });
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.Employee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("HireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("MonthlySalary")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("Employees");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.EmployeeAdvance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("PayrollEntryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PayrollEntryId");
+
+                    b.HasIndex("EmployeeId", "Date");
+
+                    b.ToTable("EmployeeAdvances");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.EmployeeCustody", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("TreasuryAccount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TreasuryEntryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TreasuryEntryId")
+                        .IsUnique()
+                        .HasFilter("[TreasuryEntryId] IS NOT NULL");
+
+                    b.HasIndex("EmployeeId", "Date", "Id");
+
+                    b.ToTable("EmployeeCustodies");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.EmployeeCustodyMovement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeCustodyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeCustodyId", "Date", "Id");
+
+                    b.ToTable("EmployeeCustodyMovements");
                 });
 
             modelBuilder.Entity("HagImamAccounts.Models.ExpenseEntry", b =>
@@ -102,16 +322,30 @@ namespace HagImamAccounts.Migrations
                     b.Property<decimal>("Outgoing")
                         .HasColumnType("decimal(18,4)");
 
+                    b.Property<int?>("PayrollEntryId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Statement")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("TreasuryEntryId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("FarmMealBatchId")
                         .IsUnique()
                         .HasFilter("[FarmMealBatchId] IS NOT NULL");
+
+                    b.HasIndex("PayrollEntryId")
+                        .IsUnique()
+                        .HasFilter("[PayrollEntryId] IS NOT NULL");
+
+                    b.HasIndex("TreasuryEntryId")
+                        .IsUnique()
+                        .HasFilter("[TreasuryEntryId] IS NOT NULL");
 
                     b.ToTable("ExpenseEntries");
                 });
@@ -126,6 +360,20 @@ namespace HagImamAccounts.Migrations
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal>("FarmAdditionAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("FarmAdditionStatement")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("FarmDiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("FarmDiscountStatement")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("FarmName")
                         .IsRequired()
@@ -153,6 +401,130 @@ namespace HagImamAccounts.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("FarmMealBatches");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.FarmPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FarmName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("TreasuryEntryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarmName", "Date", "Id");
+
+                    b.HasIndex("TreasuryEntryId")
+                        .IsUnique()
+                        .HasFilter("[TreasuryEntryId] IS NOT NULL");
+
+                    b.ToTable("FarmPayments");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.FarmAccountAdjustment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FarmName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarmName", "Date", "Id");
+
+                    b.ToTable("FarmAccountAdjustments");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.FridgeEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Incoming")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Outgoing")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("StripCustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StripInventoryEntryId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TreasuryEntryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StripCustomerId");
+
+                    b.HasIndex("StripInventoryEntryId")
+                        .IsUnique()
+                        .HasFilter("[StripInventoryEntryId] IS NOT NULL");
+
+                    b.HasIndex("TreasuryEntryId");
+
+                    b.HasIndex("ClientId", "Date", "Id");
+
+                    b.ToTable("FridgeEntries");
                 });
 
             modelBuilder.Entity("HagImamAccounts.Models.OutsideCustomer", b =>
@@ -209,6 +581,61 @@ namespace HagImamAccounts.Migrations
                     b.ToTable("OutsideEntries");
                 });
 
+            modelBuilder.Entity("HagImamAccounts.Models.PayrollEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AbsenceDays")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("AdvancesDeduction")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("BaseSalary")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Bonus")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("DailyRate")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal>("OtherDeductions")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime?>("PaidDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Month");
+
+                    b.HasIndex("EmployeeId", "Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("PayrollEntries");
+                });
+
             modelBuilder.Entity("HagImamAccounts.Models.StripCustomer", b =>
                 {
                     b.Property<int>("Id")
@@ -241,17 +668,32 @@ namespace HagImamAccounts.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("CartonType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Cartons")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("EntryType")
+                        .HasColumnType("int");
 
                     b.Property<int>("Incoming")
                         .HasColumnType("int");
 
                     b.Property<int>("Outgoing")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PricePerCarton")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("ReceivedBy")
                         .IsRequired()
@@ -293,6 +735,9 @@ namespace HagImamAccounts.Migrations
                     b.Property<decimal>("CashCollection")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("CashTreasuryAccount")
+                        .HasColumnType("int");
+
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
@@ -308,6 +753,9 @@ namespace HagImamAccounts.Migrations
 
                     b.Property<decimal>("ElectronicCollection")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ElectronicTreasuryAccount")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("EmptyWeight")
                         .HasColumnType("decimal(18,2)");
@@ -377,16 +825,73 @@ namespace HagImamAccounts.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int?>("TransactionId")
+                        .HasColumnType("int");
+
                     b.Property<Guid?>("TransferId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TransactionId");
 
                     b.HasIndex("TransferId");
 
                     b.HasIndex("Account", "Date", "Id");
 
                     b.ToTable("TreasuryEntries");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.EmployeeAdvance", b =>
+                {
+                    b.HasOne("HagImamAccounts.Models.Employee", "Employee")
+                        .WithMany("Advances")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HagImamAccounts.Models.PayrollEntry", "PayrollEntry")
+                        .WithMany("Advances")
+                        .HasForeignKey("PayrollEntryId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("PayrollEntry");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.EmployeeCustody", b =>
+                {
+                    b.HasOne("HagImamAccounts.Models.Employee", "Employee")
+                        .WithMany("Custodies")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HagImamAccounts.Models.TreasuryEntry", "TreasuryEntry")
+                        .WithMany()
+                        .HasForeignKey("TreasuryEntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("TreasuryEntry");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.EmployeeCustodyMovement", b =>
+                {
+                    b.HasOne("HagImamAccounts.Models.EmployeeCustody", "EmployeeCustody")
+                        .WithMany("Movements")
+                        .HasForeignKey("EmployeeCustodyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EmployeeCustody");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.EmployeeCustody", b =>
+                {
+                    b.Navigation("Movements");
                 });
 
             modelBuilder.Entity("HagImamAccounts.Models.ExpenseEntry", b =>
@@ -396,7 +901,63 @@ namespace HagImamAccounts.Migrations
                         .HasForeignKey("FarmMealBatchId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("HagImamAccounts.Models.PayrollEntry", "PayrollEntry")
+                        .WithOne("ExpenseEntry")
+                        .HasForeignKey("HagImamAccounts.Models.ExpenseEntry", "PayrollEntryId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("HagImamAccounts.Models.TreasuryEntry", "TreasuryEntry")
+                        .WithMany()
+                        .HasForeignKey("TreasuryEntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("FarmMealBatch");
+
+                    b.Navigation("PayrollEntry");
+
+                    b.Navigation("TreasuryEntry");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.FarmPayment", b =>
+                {
+                    b.HasOne("HagImamAccounts.Models.TreasuryEntry", "TreasuryEntry")
+                        .WithMany()
+                        .HasForeignKey("TreasuryEntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("TreasuryEntry");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.FridgeEntry", b =>
+                {
+                    b.HasOne("HagImamAccounts.Models.Client", "Client")
+                        .WithMany("FridgeEntries")
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HagImamAccounts.Models.StripCustomer", "StripCustomer")
+                        .WithMany()
+                        .HasForeignKey("StripCustomerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("HagImamAccounts.Models.StripInventoryEntry", "StripInventoryEntry")
+                        .WithMany()
+                        .HasForeignKey("StripInventoryEntryId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("HagImamAccounts.Models.TreasuryEntry", "TreasuryEntry")
+                        .WithMany()
+                        .HasForeignKey("TreasuryEntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Client");
+
+                    b.Navigation("StripCustomer");
+
+                    b.Navigation("StripInventoryEntry");
+
+                    b.Navigation("TreasuryEntry");
                 });
 
             modelBuilder.Entity("HagImamAccounts.Models.OutsideEntry", b =>
@@ -408,6 +969,17 @@ namespace HagImamAccounts.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.PayrollEntry", b =>
+                {
+                    b.HasOne("HagImamAccounts.Models.Employee", "Employee")
+                        .WithMany("PayrollEntries")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("HagImamAccounts.Models.StripInventoryEntry", b =>
@@ -438,9 +1010,30 @@ namespace HagImamAccounts.Migrations
                     b.Navigation("FarmMealBatch");
                 });
 
+            modelBuilder.Entity("HagImamAccounts.Models.TreasuryEntry", b =>
+                {
+                    b.HasOne("HagImamAccounts.Models.Transaction", "Transaction")
+                        .WithMany("TreasuryEntries")
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Transaction");
+                });
+
             modelBuilder.Entity("HagImamAccounts.Models.Client", b =>
                 {
+                    b.Navigation("FridgeEntries");
+
                     b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.Employee", b =>
+                {
+                    b.Navigation("Advances");
+
+                    b.Navigation("Custodies");
+
+                    b.Navigation("PayrollEntries");
                 });
 
             modelBuilder.Entity("HagImamAccounts.Models.FarmMealBatch", b =>
@@ -453,9 +1046,21 @@ namespace HagImamAccounts.Migrations
                     b.Navigation("Entries");
                 });
 
+            modelBuilder.Entity("HagImamAccounts.Models.PayrollEntry", b =>
+                {
+                    b.Navigation("Advances");
+
+                    b.Navigation("ExpenseEntry");
+                });
+
             modelBuilder.Entity("HagImamAccounts.Models.StripCustomer", b =>
                 {
                     b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("HagImamAccounts.Models.Transaction", b =>
+                {
+                    b.Navigation("TreasuryEntries");
                 });
 #pragma warning restore 612, 618
         }

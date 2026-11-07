@@ -18,41 +18,101 @@
             <form asp-action="EditCustomerEntry" method="post">
                 <input asp-for="Id" type="hidden" />
                 <input asp-for="CustomerId" type="hidden" />
+                <input asp-for="EntryType" type="hidden" />
                 <div asp-validation-summary="All" class="text-danger mb-3"></div>
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-2">
-                        <label asp-for="CartonType" class="form-label">نوع الكراتين</label>
-                        <select asp-for="CartonType" class="form-select">
-                            <option value="@HagImamAccounts.Models.StripCartonType.FiveKilogram">5 كيلو</option>
-                            <option value="@HagImamAccounts.Models.StripCartonType.NineHundredGram">900 جرام</option>
-                        </select>
+                @if (Model.EntryType == HagImamAccounts.Models.StripEntryType.Payment)
+                {
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label asp-for="Date" class="form-label">التاريخ</label>
+                            <input asp-for="Date" type="date" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Statement" class="form-label">البيان</label>
+                            <input asp-for="Statement" class="form-control" maxlength="500" />
+                            <span asp-validation-for="Statement" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="PaidAmount" class="form-label">دفع كام</label>
+                            <input asp-for="PaidAmount" type="number" min="0.01" step="0.01" class="form-control" />
+                            <span asp-validation-for="PaidAmount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="TreasuryAccount" class="form-label">خزنة التحصيل</label>
+                            <select asp-for="TreasuryAccount" class="form-select">
+                                <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenCash">خزنة أبو مازن - نقدي</option>
+                                <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenVodafoneCash">فودافون كاش - أبو مازن</option>
+                                <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenInstaPay">إنستا باي - أبو مازن</option>
+                                <option value="@HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanCash">خزنة محمد عبدالرحمن - نقدي</option>
+                                <option value="@HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanVodafoneCash">فودافون كاش - محمد عبدالرحمن</option>
+                                <option value="@HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanInstaPay">إنستا باي - محمد عبدالرحمن</option>
+                            </select>
+                            <span asp-validation-for="TreasuryAccount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-success w-100" title="حفظ التعديلات">
+                                <i class="fas fa-save me-1"></i> حفظ
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <label asp-for="Date" class="form-label">التاريخ</label>
-                        <input asp-for="Date" type="date" class="form-control" />
+                }
+                else
+                {
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-2">
+                            <label asp-for="CartonType" class="form-label">نوع الكراتين</label>
+                            <select asp-for="CartonType" class="form-select">
+                                <option value="@HagImamAccounts.Models.StripCartonType.FiveKilogram">5 كيلو</option>
+                                <option value="@HagImamAccounts.Models.StripCartonType.NineHundredGram">900 جرام</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="Date" class="form-label">التاريخ</label>
+                            <input asp-for="Date" type="date" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Statement" class="form-label">البيان</label>
+                            <input asp-for="Statement" class="form-control" maxlength="500" />
+                            <span asp-validation-for="Statement" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="Cartons" class="form-label">خد كام كرتونة</label>
+                            <input asp-for="Cartons" type="number" min="1" step="1" class="form-control" id="editCartons" />
+                            <span asp-validation-for="Cartons" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="PricePerCarton" class="form-label">سعر الكرتونة</label>
+                            <input asp-for="PricePerCarton" type="number" min="0" step="0.01" class="form-control" id="editPrice" />
+                            <span asp-validation-for="PricePerCarton" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">الإجمالي</label>
+                            <input type="text" class="form-control bg-light" id="editTotal" readonly value="0" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-success w-100" title="حفظ التعديلات">
+                                <i class="fas fa-save me-1"></i> حفظ
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                        <label asp-for="Statement" class="form-label">البيان</label>
-                        <input asp-for="Statement" class="form-control" maxlength="500" />
-                        <span asp-validation-for="Statement" class="text-danger small"></span>
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="Outgoing" class="form-label">استلم من المخزن</label>
-                        <input asp-for="Outgoing" type="number" min="0" step="1" class="form-control" />
-                        <span asp-validation-for="Outgoing" class="text-danger small"></span>
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="Incoming" class="form-label">مرتجع للمخزن</label>
-                        <input asp-for="Incoming" type="number" min="0" step="1" class="form-control" />
-                        <span asp-validation-for="Incoming" class="text-danger small"></span>
-                    </div>
-                    <div class="col-md-1">
-                        <button type="submit" class="btn btn-success w-100" title="حفظ التعديلات">
-                            <i class="fas fa-save"></i>
-                        </button>
-                    </div>
-                </div>
+                }
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        const cartonsInput = document.getElementById('editCartons');
+        const priceInput = document.getElementById('editPrice');
+        const totalInput = document.getElementById('editTotal');
+        function calcTotal() {
+            const cartons = parseFloat(cartonsInput?.value || '0') || 0;
+            const price = parseFloat(priceInput?.value || '0') || 0;
+            totalInput.value = (cartons * price).toLocaleString('ar-EG');
+        }
+        cartonsInput?.addEventListener('input', calcTotal);
+        priceInput?.addEventListener('input', calcTotal);
+        calcTotal();
+    </script>
+}

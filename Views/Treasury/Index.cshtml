@@ -9,8 +9,28 @@
         account.Account == HagImamAccounts.Models.TreasuryAccount.HajjImamCash ||
         account.Account == HagImamAccounts.Models.TreasuryAccount.HajjImamVodafoneCash ||
         account.Account == HagImamAccounts.Models.TreasuryAccount.HajjImamInstaPay);
+    var mohamedAbdelrahmanAccounts = Model.Where(account =>
+        account.Account == HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanCash ||
+        account.Account == HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanVodafoneCash ||
+        account.Account == HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanInstaPay);
     var generalAccounts = Model.Where(account =>
         account.Account == HagImamAccounts.Models.TreasuryAccount.General);
+    var cashAccountsTotal = Model
+        .Where(account =>
+            account.Account == HagImamAccounts.Models.TreasuryAccount.AbuMazenCash ||
+            account.Account == HagImamAccounts.Models.TreasuryAccount.HajjImamCash ||
+            account.Account == HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanCash ||
+            account.Account == HagImamAccounts.Models.TreasuryAccount.General)
+        .Sum(account => account.Balance);
+    var walletAccountsTotal = Model
+        .Where(account =>
+            account.Account == HagImamAccounts.Models.TreasuryAccount.AbuMazenVodafoneCash ||
+            account.Account == HagImamAccounts.Models.TreasuryAccount.AbuMazenInstaPay ||
+            account.Account == HagImamAccounts.Models.TreasuryAccount.HajjImamVodafoneCash ||
+            account.Account == HagImamAccounts.Models.TreasuryAccount.HajjImamInstaPay ||
+            account.Account == HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanVodafoneCash ||
+            account.Account == HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanInstaPay)
+        .Sum(account => account.Balance);
 }
 
 <div class="fade-in">
@@ -18,10 +38,34 @@
         <i class="fas fa-vault me-2 text-success"></i>الخزن والمحافظ
     </h3>
 
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card card-dashboard h-100 border-success">
+                <div class="card-body">
+                    <div class="text-muted">مجموع النقدي والعمومية</div>
+                    <div class="display-6 fw-bold @(cashAccountsTotal < 0 ? "text-danger" : "text-success")">
+                        @cashAccountsTotal.ToString("#,##0.####")
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card card-dashboard h-100">
+                <div class="card-body">
+                    <div class="text-muted">مجموع المحافظ - أبو مازن والحاج إمام ومحمد عبدالرحمن</div>
+                    <div class="display-6 fw-bold @(walletAccountsTotal < 0 ? "text-danger" : "text-success")">
+                        @walletAccountsTotal.ToString("#,##0.####")
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @foreach (var accountGroup in new[]
     {
         (Title: "خزن ومحافظ أبو مازن", Accounts: abuMazenAccounts),
         (Title: "خزن ومحافظ الحاج إمام", Accounts: hajjImamAccounts),
+        (Title: "خزن ومحافظ محمد عبدالرحمن", Accounts: mohamedAbdelrahmanAccounts),
         (Title: "الخزنة العمومية", Accounts: generalAccounts)
     })
     {

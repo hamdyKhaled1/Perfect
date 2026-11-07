@@ -1,0 +1,89 @@
+@model Transaction
+@{
+    // كلمة مرور فتح تعديل الرصيد القديم (يتم التحقق منها مرة أخرى على السيرفر).
+    const string unlockPassword = "123";
+}
+
+<div class="mb-3" data-old-balance-block>
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <label asp-for="OldBalance" class="form-label mb-0">
+            <i class="fas fa-money-bill me-1"></i>فلوس عليه قديم
+            <i class="fas fa-lock text-secondary ms-1" data-old-balance-lock title="محمي بكلمة مرور"></i>
+        </label>
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" data-old-balance-toggle>
+            <i class="fas fa-key me-1"></i>تعديل
+        </button>
+    </div>
+
+    <input asp-for="OldBalance" type="number" step="0.01" class="form-control calc-input bg-light"
+           id="OldBalance" asp-format="{0:0.##}" readonly data-old-balance-input />
+
+    <div class="input-group input-group-sm mt-2 d-none" data-old-balance-password>
+        <input type="password" name="oldBalancePassword" class="form-control" placeholder="كلمة المرور"
+               autocomplete="off" data-old-balance-password-input />
+        <button type="button" class="btn btn-outline-success" data-old-balance-unlock>
+            <i class="fas fa-unlock me-1"></i>فتح
+        </button>
+    </div>
+
+    <div class="text-danger small mt-1 d-none" data-old-balance-error>كلمة المرور غير صحيحة.</div>
+
+    <div class="form-text" data-old-balance-hint>
+        <i class="fas fa-lock me-1"></i>الرصيد القديم محمي، ولا يمكن تعديله إلا بكلمة المرور.
+    </div>
+</div>
+
+<script>
+    (function () {
+        var block = document.querySelector('[data-old-balance-block]');
+        if (!block) return;
+
+        var unlockPassword = '@unlockPassword';
+        var input = block.querySelector('[data-old-balance-input]');
+        var toggle = block.querySelector('[data-old-balance-toggle]');
+        var passwordBox = block.querySelector('[data-old-balance-password]');
+        var passwordInput = block.querySelector('[data-old-balance-password-input]');
+        var unlockButton = block.querySelector('[data-old-balance-unlock]');
+        var error = block.querySelector('[data-old-balance-error]');
+        var hint = block.querySelector('[data-old-balance-hint]');
+        var lockIcon = block.querySelector('[data-old-balance-lock]');
+
+        function setUnlocked(unlocked) {
+            input.readOnly = !unlocked;
+            input.classList.toggle('bg-light', !unlocked);
+            hint.classList.toggle('d-none', unlocked);
+            lockIcon.classList.toggle('d-none', unlocked);
+            toggle.classList.toggle('d-none', unlocked);
+            if (unlocked) {
+                input.focus();
+                if (input.select) input.select();
+            }
+        }
+
+        toggle.addEventListener('click', function () {
+            passwordBox.classList.remove('d-none');
+            error.classList.add('d-none');
+            passwordInput.focus();
+        });
+
+        function tryUnlock() {
+            if ((passwordInput.value || '').trim() === unlockPassword) {
+                error.classList.add('d-none');
+                passwordBox.classList.add('d-none');
+                setUnlocked(true);
+            } else {
+                error.classList.remove('d-none');
+                passwordInput.focus();
+                if (passwordInput.select) passwordInput.select();
+            }
+        }
+
+        unlockButton.addEventListener('click', tryUnlock);
+        passwordInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                tryUnlock();
+            }
+        });
+    })();
+</script>

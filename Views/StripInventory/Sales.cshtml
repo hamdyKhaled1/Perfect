@@ -1,0 +1,214 @@
+@model HagImamAccounts.ViewModels.StripSalesReportViewModel
+@{
+    ViewData["Title"] = "إجمالي مبيعات الاستربس";
+    string CartonTypeName(HagImamAccounts.Models.StripCartonType cartonType) =>
+        cartonType == HagImamAccounts.Models.StripCartonType.FiveKilogram ? "5 كيلو" : "900 جرام";
+    var customers = ViewBag.Customers as List<HagImamAccounts.Models.StripCustomer> ?? new();
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="fas fa-chart-line me-2 text-success"></i>إجمالي مبيعات الاستربس
+        </h3>
+        <div class="d-flex gap-2">
+            <a asp-action="Customers" class="btn btn-outline-success">
+                <i class="fas fa-users me-1"></i> عملاء الاستربس
+            </a>
+            <a asp-action="Index" class="btn btn-outline-dark">
+                <i class="fas fa-arrow-right me-1"></i> رجوع للمخزون
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Sales" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">من تاريخ</label>
+                    <input type="date" name="fromDate" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">إلى تاريخ</label>
+                    <input type="date" name="toDate" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">العميل</label>
+                    <select name="customerId" class="form-select">
+                        <option value="">كل العملاء</option>
+                        @foreach (var customer in customers)
+                        {
+                            <option value="@customer.Id" selected="@(Model.CustomerId == customer.Id)">@customer.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-search me-1"></i> عرض
+                    </button>
+                    <a asp-action="Sales" class="btn btn-outline-secondary" title="مسح الفلتر">
+                        <i class="fas fa-eraser"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-dashboard border-primary h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">إجمالي المبيعات</div>
+                    <div class="h4 fw-bold mb-0">@Model.TotalSales.ToString("#,##0.##") جنيه</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-dashboard border-success h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">إجمالي المدفوعات</div>
+                    <div class="h4 fw-bold mb-0 text-success">@Model.TotalPaid.ToString("#,##0.##") جنيه</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-dashboard border-danger h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">إجمالي الباقي على العملاء</div>
+                    <div class="h4 fw-bold mb-0 text-danger">@Model.TotalDue.ToString("#,##0.##") جنيه</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-dashboard border-info h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">إجمالي الكراتين المبيعة</div>
+                    <div class="h4 fw-bold mb-0">@Model.TotalCartons.ToString("#,##0") كرتونة</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3"><i class="fas fa-users me-2 text-success"></i>ملخص كل عميل</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-bordered align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>اسم العميل</th>
+                            <th>كراتين 5 كيلو</th>
+                            <th>كراتين 900 جرام</th>
+                            <th>إجمالي الكراتين</th>
+                            <th>إجمالي المبيعات</th>
+                            <th>دفع كام</th>
+                            <th>الباقي عليه</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Summaries.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">لا توجد مبيعات في الفترة المحددة.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @for (var index = 0; index < Model.Summaries.Count; index++)
+                            {
+                                var summary = Model.Summaries[index];
+                                <tr>
+                                    <td>@(index + 1)</td>
+                                    <td class="fw-bold">
+                                        <a asp-action="CustomerProfile" asp-route-id="@summary.CustomerId" class="text-decoration-none">
+                                            @summary.CustomerName
+                                        </a>
+                                    </td>
+                                    <td class="text-center">@summary.FiveKilogramCartons.ToString("#,##0")</td>
+                                    <td class="text-center">@summary.NineHundredGramCartons.ToString("#,##0")</td>
+                                    <td class="text-center fw-bold">@summary.TotalCartons.ToString("#,##0")</td>
+                                    <td class="fw-bold">@summary.TotalSales.ToString("#,##0.##")</td>
+                                    <td class="text-success">@summary.TotalPaid.ToString("#,##0.##")</td>
+                                    <td class="fw-bold @(summary.Remaining > 0 ? "text-danger" : "text-success")">@summary.Remaining.ToString("#,##0.##")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    @if (Model.Summaries.Count > 0)
+                    {
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td colspan="2" class="text-end">الإجمالي</td>
+                                <td class="text-center">@Model.Summaries.Sum(summary => summary.FiveKilogramCartons).ToString("#,##0")</td>
+                                <td class="text-center">@Model.Summaries.Sum(summary => summary.NineHundredGramCartons).ToString("#,##0")</td>
+                                <td class="text-center">@Model.TotalCartons.ToString("#,##0")</td>
+                                <td>@Model.TotalSales.ToString("#,##0.##")</td>
+                                <td class="text-success">@Model.TotalPaid.ToString("#,##0.##")</td>
+                                <td class="text-danger">@Model.TotalDue.ToString("#,##0.##")</td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3"><i class="fas fa-list me-2 text-success"></i>تفاصيل المبيعات</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-bordered align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>التاريخ</th>
+                            <th>اسم العميل</th>
+                            <th>البيان</th>
+                            <th>نوع الكراتين</th>
+                            <th>خد كام كرتونة</th>
+                            <th>سعر الكرتونة</th>
+                            <th>الإجمالي (عليه)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Rows.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">لا توجد مبيعات مسجلة.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @for (var index = 0; index < Model.Rows.Count; index++)
+                            {
+                                var row = Model.Rows[index];
+                                <tr>
+                                    <td>@(index + 1)</td>
+                                    <td>@row.Date.ToString("dd/MM/yyyy")</td>
+                                    <td class="fw-bold">@row.CustomerName</td>
+                                    <td>@row.Statement</td>
+                                    <td>@CartonTypeName(row.CartonType)</td>
+                                    <td class="text-center">@row.Cartons.ToString("#,##0")</td>
+                                    <td class="text-center">@row.PricePerCarton.ToString("#,##0.##")</td>
+                                    <td class="fw-bold text-danger">@row.Amount.ToString("#,##0.##")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    @if (Model.Rows.Count > 0)
+                    {
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td colspan="5" class="text-end">إجمالي اللي اتباع</td>
+                                <td class="text-center">@Model.TotalCartons.ToString("#,##0")</td>
+                                <td>-</td>
+                                <td class="text-danger">@Model.TotalSales.ToString("#,##0.##")</td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

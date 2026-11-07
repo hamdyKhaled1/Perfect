@@ -41,6 +41,8 @@ namespace HagImamAccounts.Services
                     normalized.Append((int)char.GetNumericValue(character));
                 else if (character is '٫')
                     normalized.Append('.');
+                else if (character is '×')
+                    normalized.Append('*');
                 else if (character is not ('٬' or ',' or ' ' or '\t' or '\r' or '\n'))
                     normalized.Append(character);
             }

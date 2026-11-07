@@ -1,0 +1,66 @@
+@model HagImamAccounts.ViewModels.StripInventoryEntryInputViewModel
+@{
+    var selectedName = Model.CartonType == HagImamAccounts.Models.StripCartonType.FiveKilogram
+        ? "كراتين 5 كيلو"
+        : "كراتين 900 جرام";
+    ViewData["Title"] = "تعديل حركة " + selectedName;
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="fas fa-pen-to-square me-2 text-warning"></i>تعديل حركة @selectedName
+        </h3>
+        <a asp-action="Details" asp-route-cartonType="@Model.CartonType" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع للحركات
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="EditEntry" method="post">
+                <input asp-for="Id" type="hidden" />
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label asp-for="CartonType" class="form-label">نوع الكراتين</label>
+                        <select asp-for="CartonType" class="form-select">
+                            <option value="@HagImamAccounts.Models.StripCartonType.FiveKilogram">5 كيلو</option>
+                            <option value="@HagImamAccounts.Models.StripCartonType.NineHundredGram">900 جرام</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Date" class="form-label">التاريخ</label>
+                        <input asp-for="Date" type="date" class="form-control" />
+                        <span asp-validation-for="Date" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="ReceivedBy" class="form-label">اللي استلم</label>
+                        <input asp-for="ReceivedBy" class="form-control" maxlength="200" />
+                        <span asp-validation-for="ReceivedBy" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Statement" class="form-label">البيان</label>
+                        <input asp-for="Statement" class="form-control" maxlength="500" />
+                        <span asp-validation-for="Statement" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Incoming" class="form-label">إضافة كراتين</label>
+                        <input asp-for="Incoming" type="number" min="0" step="1" class="form-control" />
+                        <span asp-validation-for="Incoming" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Outgoing" class="form-label">سحب كراتين</label>
+                        <input asp-for="Outgoing" type="number" min="0" step="1" class="form-control" />
+                        <span asp-validation-for="Outgoing" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i> حفظ التعديلات
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

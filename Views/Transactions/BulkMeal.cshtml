@@ -18,8 +18,8 @@
         </div>
     </div>
 
-    <form asp-action="BulkMeal" method="post"
-          data-bulk-meal-form data-bulk-meal-saved="@(ViewBag.BulkMealSaved == true ? "true" : "false")">
+    <form asp-action="BulkMeal" method="post" data-bulk-meal-form
+          data-bulk-meal-saved="@(ViewBag.BulkMealSaved == true ? "true" : "false")" autocomplete="off">
         <input type="hidden" name="savePassword" data-bulk-meal-save-password />
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
         <div class="alert alert-warning d-none" role="alert" data-bulk-meal-draft-status></div>
@@ -27,13 +27,14 @@
         <div class="form-section mb-4">
             <div class="row g-3 align-items-end">
                 <div class="col-sm-6 col-md-3">
-                    <label asp-for="DateText" class="form-label">تاريخ الوجبات</label>
-                    <input asp-for="DateText" type="text" class="form-control" inputmode="numeric"
-                           placeholder="يوم/شهر/سنة (مثال: 20/10/2026)" />
+                    <label asp-for="Date" class="form-label">تاريخ الوجبات</label>
+                    <input asp-for="Date" type="date" class="form-control"
+                           value="@Model.Date.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-sm-6 col-md-3">
                     <label asp-for="FarmName" class="form-label">اسم المزرعة</label>
                     <input asp-for="FarmName" class="form-control" maxlength="200"
+                           autocomplete="off"
                            data-bulk-meal-farm-name data-farm-balance-url="@Url.Action("FarmBalance", "Transactions")"
                            placeholder="اكتب اسم المزرعة" />
                     <span asp-validation-for="FarmName" class="text-danger small"></span>
@@ -41,13 +42,14 @@
                 <div class="col-sm-6 col-md-3">
                     <label asp-for="MealType" class="form-label">نوع الوجبة</label>
                     <input asp-for="MealType" class="form-control" maxlength="100"
+                           autocomplete="off"
                            placeholder="مثال: دواجن، بط، ..." />
                     <span asp-validation-for="MealType" class="text-danger small"></span>
                 </div>
                 <div class="col-sm-6 col-md-3">
                     <label asp-for="FarmPrice" class="form-label">سعر المزرعة</label>
                     <input asp-for="FarmPrice" type="number" step="0.01" min="0" class="form-control"
-                           data-bulk-meal-farm-price />
+                           autocomplete="off" data-bulk-meal-farm-price />
                 </div>
                 <div class="col-12 col-md-3 text-muted">
                     أدخل بيانات العملاء المطلوب تسجيل وجباتهم، واترك باقي الصفوف فارغة.
@@ -69,6 +71,9 @@
                     <option value="50">50</option>
                 </select>
             </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="alert alert-danger py-2 px-3 mb-0 w-100 d-none" data-bulk-row-hint-top>أكمل باقي بيانات العميل الحالي</div>
+            </div>
         </div>
 
         <div class="table-responsive bulk-meal-table-wrap">
@@ -81,7 +86,7 @@
                         <th>الفارغ</th>
                         <th>الصافي</th>
                         <th>ملاحظات بعد الصافي</th>
-                        <th>زيادة السعر</th>
+                        <th>الزيادة على سعر المزرعة</th>
                         <th>سعر الكيلو</th>
                         <th>إجمالي الوجبة</th>
                     </tr>
@@ -92,42 +97,102 @@
                         var row = Model.Rows[index];
                         <tr data-bulk-meal-row>
                             <td>@(index + 1)<input type="hidden" name="Rows[@index].ClientId" value="@row.ClientId" /></td>
-                            <td class="fw-bold text-nowrap" data-bulk-meal-client-name>@row.ClientName</td>
+                            <td class="fw-bold text-nowrap" data-bulk-meal-client-name>
+                                @row.ClientName
+                                @if (row.ClientName.Trim() == "صفيطه")
+                                {
+                                    <div class="small text-muted">عادي وبانيه</div>
+                                }
+                            </td>
                             <td>
+                                @if (row.ClientName.Trim() == "صفيطه")
+                                {
+                                    <label class="form-label small mb-1">عادي</label>
+                                }
                                 <input type="text" name="Rows[@index].GrossWeightExpression" value="@row.GrossWeightExpression"
                                        id="gross-expression-@index"
                                        class="form-control form-control-sm" data-bulk-meal-input data-gross-expression
-                                       dir="ltr" inputmode="decimal" maxlength="100" placeholder="مثال: 900+15" aria-label="القائم - @row.ClientName" />
-                                <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي القائم - @row.ClientName">
+                                       autocomplete="off" dir="ltr" inputmode="decimal" maxlength="100" aria-label="القائم العادي - @row.ClientName" />
+                                <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي القائم العادي - @row.ClientName">
                                     <button type="button" class="btn btn-outline-secondary" data-expression-target="gross-expression-@index" data-expression-operator="+">+</button>
-                                    <span class="small text-muted text-nowrap">إجمالي القائم: <strong data-gross-total aria-live="polite">0</strong></span>
+                                    <span class="small text-muted text-nowrap">الإجمالي: <strong data-gross-total aria-live="polite">0</strong></span>
                                 </div>
                                 <span class="text-danger small" data-valmsg-for="Rows[@index].GrossWeightExpression"></span>
+                                @if (row.ClientName.Trim() == "صفيطه")
+                                {
+                                    <label class="form-label small mb-1 mt-2">بانيه</label>
+                                    <input type="text" name="Rows[@index].PanehGrossWeightExpression" value="@row.PanehGrossWeightExpression"
+                                           id="paneh-gross-expression-@index"
+                                           class="form-control form-control-sm" data-bulk-meal-input data-paneh-gross-expression
+                                           autocomplete="off" dir="ltr" inputmode="decimal" maxlength="100"
+                                           aria-label="القائم بانيه - صفيطه" />
+                                    <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي القائم بانيه - صفيطه">
+                                        <button type="button" class="btn btn-outline-secondary"
+                                                data-expression-target="paneh-gross-expression-@index" data-expression-operator="+">+</button>
+                                        <span class="small text-muted text-nowrap">الإجمالي: <strong data-paneh-gross-total aria-live="polite">0</strong></span>
+                                    </div>
+                                    <span class="text-danger small" data-valmsg-for="Rows[@index].PanehGrossWeightExpression"></span>
+                                }
                             </td>
                             <td>
+                                @if (row.ClientName.Trim() == "صفيطه")
+                                {
+                                    <label class="form-label small mb-1">عادي</label>
+                                }
                                 <input type="text" name="Rows[@index].EmptyWeightExpression" value="@row.EmptyWeightExpression"
                                        id="empty-expression-@index"
                                        class="form-control form-control-sm" data-bulk-meal-input data-empty-expression
-                                       dir="ltr" inputmode="decimal" maxlength="100" placeholder="مثال: 8*12" aria-label="الفارغ - @row.ClientName" />
-                                <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي الفارغ - @row.ClientName">
+                                       autocomplete="off" dir="ltr" inputmode="decimal" maxlength="100" aria-label="الفارغ العادي - @row.ClientName" />
+                                <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي الفارغ العادي - @row.ClientName">
                                     <button type="button" class="btn btn-outline-secondary" data-expression-target="empty-expression-@index" data-expression-operator="*">×</button>
-                                    <span class="small text-muted text-nowrap">إجمالي الفارغ: <strong data-empty-total aria-live="polite">0</strong></span>
+                                    <span class="small text-muted text-nowrap">الإجمالي: <strong data-empty-total aria-live="polite">0</strong></span>
                                 </div>
                                 <span class="text-danger small" data-valmsg-for="Rows[@index].EmptyWeightExpression"></span>
+                                @if (row.ClientName.Trim() == "صفيطه")
+                                {
+                                    <label class="form-label small mb-1 mt-2">بانيه</label>
+                                    <input type="text" name="Rows[@index].PanehEmptyWeightExpression" value="@row.PanehEmptyWeightExpression"
+                                           id="paneh-empty-expression-@index"
+                                           class="form-control form-control-sm" data-bulk-meal-input data-paneh-empty-expression
+                                           autocomplete="off" dir="ltr" inputmode="decimal" maxlength="100"
+                                           aria-label="الفارغ بانيه - صفيطه" />
+                                    <div class="d-flex align-items-center gap-2 mt-1" aria-label="إجمالي الفارغ بانيه - صفيطه">
+                                        <button type="button" class="btn btn-outline-secondary"
+                                                data-expression-target="paneh-empty-expression-@index" data-expression-operator="*">×</button>
+                                        <span class="small text-muted text-nowrap">الإجمالي: <strong data-paneh-empty-total aria-live="polite">0</strong></span>
+                                    </div>
+                                    <span class="text-danger small" data-valmsg-for="Rows[@index].PanehEmptyWeightExpression"></span>
+                                }
                             </td>
                             <td class="text-nowrap fw-bold text-danger" data-net-weight>0</td>
                             <td>
                                 <input type="text" name="Rows[@index].Notes" value="@row.Notes"
                                        class="form-control form-control-sm" maxlength="1000"
+                                       autocomplete="off" data-bulk-meal-input data-notes
                                        aria-label="ملاحظات بعد الصافي - @row.ClientName" />
                             </td>
                             <td>
-                                <input type="number" name="Rows[@index].PriceIncrement" value="@row.PriceIncrement"
+                                @if (row.ClientName.Trim() == "صفيطه")
+                                {
+                                    <label class="form-label small mb-1">زيادة العادي</label>
+                                }
+                                <input type="number" name="Rows[@index].PriceIncrement" value="@row.PriceIncrement.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
                                        class="form-control form-control-sm" data-bulk-meal-input data-price-increment
-                                       step="0.01" inputmode="decimal" aria-label="زيادة السعر - @row.ClientName" />
+                                       autocomplete="off" step="0.01" inputmode="decimal" aria-label="الزيادة على سعر المزرعة - @row.ClientName" />
+                                @if (row.ClientName.Trim() == "صفيطه")
+                                {
+                                    <label class="form-label small mb-1 mt-2">زيادة البانيه</label>
+                                    <input type="number" name="Rows[@index].PanehPriceIncrement" value="@row.PanehPriceIncrement.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                                           class="form-control form-control-sm" data-bulk-meal-input data-paneh-price-increment
+                                           autocomplete="off" step="0.01" inputmode="decimal"
+                                           aria-label="زيادة سعر البانيه - صفيطه" />
+                                }
                             </td>
                             <td class="text-nowrap" data-price-per-kilo>0</td>
-                            <td class="text-nowrap fw-bold" data-meal-total>0</td>
+                            <td class="text-nowrap fw-bold" data-meal-total-cell>
+                                <div data-meal-total>0</div>
+                                <div class="small text-muted" data-meal-total-breakdown>عادي: 0</div>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -138,7 +203,10 @@
                         <td data-bulk-total-empty>0</td>
                         <td data-bulk-total-net>0</td>
                         <td colspan="3"></td>
-                        <td data-bulk-total-meal>0</td>
+                        <td class="text-nowrap">
+                            <div data-bulk-total-meal>0</div>
+                            <div class="small text-white-50" data-bulk-total-meal-breakdown>عادي: 0 / بانيه: 0</div>
+                        </td>
                     </tr>
                 </tfoot>
             </table>
@@ -157,8 +225,49 @@
                 <div class="col-md-4">
                     <label asp-for="FarmWeight" class="form-label">وزن المزرعة</label>
                     <input asp-for="FarmWeight" type="number" step="0.01" min="0" class="form-control"
+                           autocomplete="off"
                            data-bulk-meal-input data-bulk-meal-farm-weight />
                     <span asp-validation-for="FarmWeight" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="row g-3 mt-2">
+                <div class="col-lg-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold text-success">إضافة على حساب المزرعة بعد الوجبة</h6>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-sm-4">
+                                <label asp-for="FarmAdditionAmount" class="form-label">مبلغ الإضافة</label>
+                                <input asp-for="FarmAdditionAmount" type="number" min="0" step="0.01"
+                                       class="form-control" autocomplete="off" data-bulk-meal-input data-bulk-meal-farm-account-input />
+                                <span asp-validation-for="FarmAdditionAmount" class="text-danger small"></span>
+                            </div>
+                            <div class="col-sm-8">
+                                <label asp-for="FarmAdditionStatement" class="form-label">بيان الإضافة</label>
+                                <input asp-for="FarmAdditionStatement" class="form-control" maxlength="500"
+                                       autocomplete="off" placeholder="سبب الإضافة" />
+                                <span asp-validation-for="FarmAdditionStatement" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold text-danger">خصم من حساب المزرعة بعد الوجبة</h6>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-sm-4">
+                                <label asp-for="FarmDiscountAmount" class="form-label">مبلغ الخصم</label>
+                                <input asp-for="FarmDiscountAmount" type="number" min="0" step="0.01"
+                                       class="form-control" autocomplete="off" data-bulk-meal-input data-bulk-meal-farm-account-input />
+                                <span asp-validation-for="FarmDiscountAmount" class="text-danger small"></span>
+                            </div>
+                            <div class="col-sm-8">
+                                <label asp-for="FarmDiscountStatement" class="form-label">بيان الخصم</label>
+                                <input asp-for="FarmDiscountStatement" class="form-control" maxlength="500"
+                                       autocomplete="off" placeholder="سبب الخصم" />
+                                <span asp-validation-for="FarmDiscountStatement" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="row g-3 mt-2">
@@ -182,7 +291,7 @@
                 </div>
                 <div class="col-sm-6 col-lg-3">
                     <div class="border rounded p-3 h-100">
-                        <div class="text-muted small">فرق الميزان (وزن المزرعة - صافي الوجبات)</div>
+                        <div class="text-muted small">فرق الميزان (صافي الوجبات - وزن المزرعة)</div>
                         <strong data-bulk-weight-difference>0</strong>
                     </div>
                 </div>

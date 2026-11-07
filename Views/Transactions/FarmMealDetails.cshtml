@@ -28,12 +28,84 @@
                     <strong>@(string.IsNullOrWhiteSpace(Model.FarmName) ? "—" : Model.FarmName)</strong>
                 </div>
             </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="border rounded p-3 h-100">
-                    <div class="text-muted small">سعر الكيلو الأساسي</div>
-                    <strong>@Model.FarmPrice.ToString("#,##0.####")</strong>
+            <div class="col-sm-6 col-lg-4">
+                <form asp-action="UpdateFarmMealPricing" method="post" class="border rounded p-3 h-100 bg-light-subtle">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="farmWeight" class="sync-farm-weight" value="@Model.FarmWeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="amountPaid" class="sync-farm-paid" value="@Model.FarmPaidAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <label for="farmPrice" class="form-label text-muted small fw-bold">سعر الكيلو الأساسي</label>
+                    <div class="input-group">
+                        <input id="farmPrice" name="farmPrice" type="number" min="0" step="0.01"
+                               value="@Model.FarmPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                               class="form-control fw-bold" data-farm-price />
+                        <button type="submit" class="btn btn-outline-success">حفظ</button>
+                    </div>
+                    <small class="text-muted d-block mt-1">تتحدث الحسابات فورًا، ثم احفظ لتثبيت التعديل.</small>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section mb-4">
+        <h5 class="fw-bold mb-3">إضافة عميل نسيته في التوزيع</h5>
+        <form asp-action="AddClientToFarmMeal" asp-route-id="@Model.Id" method="post">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="missingClientSearch" class="form-label">ابحث عن العميل</label>
+                    <input id="missingClientSearch" type="search" class="form-control" placeholder="اكتب اسم العميل للبحث" autocomplete="off" />
+                    <select id="missingClientId" name="ClientId" class="form-select mt-2" required>
+                        <option value="">اختر العميل</option>
+                        @foreach (var client in (IEnumerable<HagImamAccounts.Models.Client>)ViewBag.AvailableClients)
+                        {
+                            <option value="@client.Id">@client.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label for="GrossWeight" class="form-label">القائم</label>
+                    <input id="GrossWeight" name="GrossWeight" type="text" inputmode="decimal" placeholder="اكتب الوزن" class="form-control" />
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-insert-operator="+" data-target="GrossWeight" aria-label="إدراج علامة جمع">+</button>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label for="EmptyWeight" class="form-label">الفارغ</label>
+                    <input id="EmptyWeight" name="EmptyWeight" type="text" inputmode="decimal" placeholder="اكتب الوزن" class="form-control" />
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-insert-operator="×" data-target="EmptyWeight" aria-label="إدراج علامة ضرب">×</button>
+                </div>
+                <div class="col-sm-6 col-md-2 d-none" data-paneh-input>
+                    <label for="PanehGrossWeight" class="form-label">قائم البانيه</label>
+                    <input id="PanehGrossWeight" name="PanehGrossWeight" type="text" inputmode="decimal" placeholder="اكتب الوزن" class="form-control" />
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-insert-operator="+" data-target="PanehGrossWeight" aria-label="إدراج علامة جمع">+</button>
+                </div>
+                <div class="col-sm-6 col-md-2 d-none" data-paneh-input>
+                    <label for="PanehEmptyWeight" class="form-label">فارغ البانيه</label>
+                    <input id="PanehEmptyWeight" name="PanehEmptyWeight" type="text" inputmode="decimal" placeholder="اكتب الوزن" class="form-control" />
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-insert-operator="×" data-target="PanehEmptyWeight" aria-label="إدراج علامة ضرب">×</button>
+                </div>
+                <div class="col-sm-6 col-md-2">
+                    <label for="MealType" class="form-label">نوع الوجبة</label>
+                    <input id="MealType" name="MealType" value="@ViewBag.DefaultMealType" maxlength="100" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label for="Notes" class="form-label">ملاحظات</label>
+                    <input id="Notes" name="Notes" maxlength="1000" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-user-plus me-1"></i> إضافة العميل للوجبة
+                    </button>
                 </div>
             </div>
+            <div class="text-muted small mt-2">
+                اختر عميلًا مسجلًا لم يظهر في التوزيع. سعر الكيلو والزيادة يؤخذان من بيانات العميل والوجبة الحالية.
+                إذا كان العميل غير مسجل، <a asp-controller="Clients" asp-action="Create">أضفه من هنا أولًا</a>.
+            </div>
+        </form>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <label for="mealClientSearch" class="form-label fw-bold"><i class="fas fa-search me-1"></i>بحث في عملاء الوجبة</label>
+            <input id="mealClientSearch" type="search" class="form-control" placeholder="اكتب اسم العميل لعرض وجبته" autocomplete="off" />
         </div>
     </div>
 
@@ -50,14 +122,20 @@
                     <th>ملاحظات بعد الصافي</th>
                     <th>سعر الكيلو</th>
                     <th>إجمالي الوجبة</th>
-                    <th>الحالة</th>
+                    <th>الإجراءات</th>
                 </tr>
             </thead>
             <tbody>
                 @for (var index = 0; index < Model.Transactions.Count; index++)
                 {
                     var transaction = Model.Transactions.ElementAt(index);
-                    <tr>
+                    <tr data-transaction-row
+                        data-client-name="@(transaction.Client?.Name ?? "عميل محذوف")"
+                        data-is-deleted="@(transaction.IsDeleted ? "true" : "false")"
+                        data-gross-weight="@transaction.GrossWeight.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                        data-empty-weight="@transaction.EmptyWeight.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                        data-net-weight="@transaction.NetWeight.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                        data-extra-field="@transaction.ExtraField.ToString(System.Globalization.CultureInfo.InvariantCulture)">
                         <td>@(index + 1)</td>
                         <td>@(transaction.Client?.Name ?? "عميل محذوف")</td>
                         <td>@transaction.GrossWeight.ToString("#,##0.####")</td>
@@ -65,16 +143,25 @@
                         <td>@transaction.NetWeight.ToString("#,##0.####")</td>
                         <td>@(string.IsNullOrWhiteSpace(transaction.MealType) ? "—" : transaction.MealType)</td>
                         <td>@(string.IsNullOrWhiteSpace(transaction.GeneralNotes) ? "—" : transaction.GeneralNotes)</td>
-                        <td>@transaction.PricePerKilo.ToString("#,##0.####")</td>
-                        <td class="fw-bold">@transaction.MealTotal.ToString("#,##0.####")</td>
-                        <td>
+                        <td data-row-kilo-price>@transaction.PricePerKilo.ToString("#,##0.####")</td>
+                        <td class="fw-bold" data-row-meal-total>@transaction.MealTotal.ToString("#,##0.####")</td>
+                        <td class="text-nowrap">
                             @if (transaction.IsDeleted)
                             {
-                                <span class="badge bg-secondary">محذوفة من حساب العميل</span>
+                                <span class="text-muted">محذوفة</span>
                             }
                             else
                             {
-                                <span class="badge bg-success">مسجلة</span>
+                                <a asp-action="Edit" asp-route-id="@transaction.Id" asp-route-section="meal"
+                                   class="btn btn-sm btn-outline-warning" title="تعديل الوجبة">
+                                    <i class="fas fa-edit"></i> تعديل
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@transaction.Id" method="post"
+                                      class="d-inline" data-confirm="هل أنت متأكد من حذف وجبة العميل '@(transaction.Client?.Name ?? "عميل محذوف")'؟">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف الوجبة">
+                                        <i class="fas fa-trash"></i> حذف
+                                    </button>
+                                </form>
                             }
                         </td>
                     </tr>
@@ -82,10 +169,12 @@
             </tbody>
             <tfoot>
                 <tr class="table-dark fw-bold">
-                    <td colspan="4">الإجمالي</td>
+                    <td colspan="2">الإجمالي</td>
+                    <td data-footer-gross-weight>@Model.Transactions.Where(transaction => !transaction.IsDeleted).Sum(transaction => transaction.GrossWeight).ToString("#,##0.####")</td>
+                    <td data-footer-empty-weight>@Model.Transactions.Where(transaction => !transaction.IsDeleted).Sum(transaction => transaction.EmptyWeight).ToString("#,##0.####")</td>
                     <td>@Model.NetWeight.ToString("#,##0.####")</td>
                     <td colspan="3"></td>
-                    <td>@Model.MealTotal.ToString("#,##0.####")</td>
+                    <td data-footer-meal-total>@Model.MealTotal.ToString("#,##0.####")</td>
                     <td></td>
                 </tr>
             </tfoot>
@@ -96,41 +185,91 @@
         <h5 class="fw-bold mb-3">ملخص التوزيع</h5>
         <div class="row g-3">
             <div class="col-sm-6 col-lg-3">
-                <div class="border rounded p-3 h-100">
-                    <div class="text-muted small">وزن المزرعة</div>
-                    <strong>@Model.FarmWeight.ToString("#,##0.####")</strong>
-                </div>
+                <form asp-action="UpdateFarmMealPricing" method="post" class="border rounded p-3 h-100 bg-light-subtle">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="farmPrice" class="sync-farm-price" value="@Model.FarmPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="amountPaid" class="sync-farm-paid" value="@Model.FarmPaidAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <label for="farmWeight" class="form-label text-muted small fw-bold">وزن المزرعة</label>
+                    <div class="input-group">
+                        <input id="farmWeight" name="farmWeight" type="number" min="0" step="0.01"
+                               value="@Model.FarmWeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                               class="form-control fw-bold" data-farm-weight />
+                        <button type="submit" class="btn btn-outline-success">حفظ</button>
+                    </div>
+                    <small class="text-muted d-block mt-1">تتحدث الحسابات فورًا، ثم احفظ لتثبيت التعديل.</small>
+                </form>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="border rounded p-3 h-100">
                     <div class="text-muted small">إجمالي الصافي الموزع</div>
-                    <strong>@Model.NetWeight.ToString("#,##0.####")</strong>
+                    <strong data-summary-net-weight>@Model.NetWeight.ToString("#,##0.####")</strong>
                 </div>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="border rounded p-3 h-100">
-                    <div class="text-muted small">فرق الميزان (وزن المزرعة - صافي الوجبات)</div>
-                    <strong>@Model.WeightDifference.ToString("#,##0.####")</strong>
+                    <div class="text-muted small">فرق الميزان (صافي الوجبات - وزن المزرعة)</div>
+                    <strong data-summary-weight-diff>@Model.WeightDifference.ToString("#,##0.####")</strong>
                 </div>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="border rounded p-3 h-100">
                     <div class="text-muted small">حساب الوجبة الحالية</div>
-                    <strong>@Model.FarmAccount.ToString("#,##0.####")</strong>
+                    <strong data-summary-farm-account>@Model.FarmAccount.ToString("#,##0.####")</strong>
                 </div>
             </div>
             <div class="col-sm-6 col-lg-3">
-                <form asp-action="UpdateFarmPayment" method="post" class="border rounded p-3 h-100">
+                <form asp-action="UpdateFarmPayment" method="post" class="border rounded p-3 h-100 bg-light-subtle">
                     <input type="hidden" name="id" value="@Model.Id" />
-                    <label for="amountPaid" class="form-label text-muted small">المبلغ المدفوع للمزرعة</label>
+                    <input type="hidden" name="farmPrice" class="sync-farm-price" value="@Model.FarmPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="farmWeight" class="sync-farm-weight" value="@Model.FarmWeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="farmAddition" class="sync-farm-addition" value="@Model.FarmAdditionAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="farmDiscount" class="sync-farm-discount" value="@Model.FarmDiscountAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <label for="amountPaid" class="form-label text-muted small fw-bold">المبلغ المدفوع للمزرعة</label>
                     <div class="input-group">
                         <input id="amountPaid" name="amountPaid" type="number" min="0" step="0.01"
                                value="@Model.FarmPaidAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
-                               class="form-control" data-farm-payment
-                               data-farm-account="@Model.TotalFarmAccount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                               class="form-control fw-bold" data-farm-payment />
                         <button type="submit" class="btn btn-outline-success">حفظ</button>
                     </div>
-                    <small class="text-muted">يتحدث المتبقي فورًا، ثم احفظ لتثبيت المبلغ.</small>
+                    <small class="text-muted d-block mt-1">يتحدث المتبقي فورًا، ثم احفظ لتثبيت المبلغ.</small>
+                </form>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <form asp-action="UpdateFarmPayment" method="post" class="border rounded p-3 h-100 bg-light-subtle">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="farmPrice" class="sync-farm-price" value="@Model.FarmPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="farmWeight" class="sync-farm-weight" value="@Model.FarmWeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="amountPaid" class="sync-farm-paid" value="@Model.FarmPaidAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="farmDiscount" class="sync-farm-discount" value="@Model.FarmDiscountAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <label for="farmAddition" class="form-label text-muted small fw-bold">
+                        <i class="fas fa-plus-circle text-success me-1"></i>إضافة على حساب المزرعة
+                    </label>
+                    <div class="input-group">
+                        <input id="farmAddition" name="farmAddition" type="number" min="0" step="0.01"
+                               value="@Model.FarmAdditionAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                               class="form-control fw-bold" data-farm-addition />
+                        <button type="submit" class="btn btn-outline-success">حفظ</button>
+                    </div>
+                    <small class="text-muted d-block mt-1">الإضافة تزيد المتبقي للمزرعة.</small>
+                </form>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <form asp-action="UpdateFarmPayment" method="post" class="border rounded p-3 h-100 bg-light-subtle">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="farmPrice" class="sync-farm-price" value="@Model.FarmPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="farmWeight" class="sync-farm-weight" value="@Model.FarmWeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="amountPaid" class="sync-farm-paid" value="@Model.FarmPaidAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="farmAddition" class="sync-farm-addition" value="@Model.FarmAdditionAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <label for="farmDiscount" class="form-label text-muted small fw-bold">
+                        <i class="fas fa-minus-circle text-danger me-1"></i>خصم من حساب المزرعة
+                    </label>
+                    <div class="input-group">
+                        <input id="farmDiscount" name="farmDiscount" type="number" min="0" step="0.01"
+                               value="@Model.FarmDiscountAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                               class="form-control fw-bold" data-farm-discount />
+                        <button type="submit" class="btn btn-outline-success">حفظ</button>
+                    </div>
+                    <small class="text-muted d-block mt-1">الخصم يقلل المتبقي للمزرعة.</small>
                 </form>
             </div>
             <div class="col-sm-6 col-lg-3">
@@ -142,33 +281,178 @@
             <div class="col-sm-6 col-lg-3">
                 <div class="border rounded p-3 h-100">
                     <div class="text-muted small">إجمالي الوجبات</div>
-                    <strong>@Model.MealTotal.ToString("#,##0.####")</strong>
+                    <strong data-summary-meal-total>@Model.MealTotal.ToString("#,##0.####")</strong>
                 </div>
             </div>
-
-            @section Scripts {
-                <script>
-                    (() => {
-                        const paymentInput = document.querySelector("[data-farm-payment]");
-                        const remainingOutput = document.querySelector("[data-farm-remaining]");
-                        if (!paymentInput || !remainingOutput) return;
-
-                        const farmAccount = Number(paymentInput.dataset.farmAccount);
-                        const formatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 });
-
-                        paymentInput.addEventListener("input", () => {
-                            const paidAmount = Number(paymentInput.value) || 0;
-                            remainingOutput.textContent = formatter.format(farmAccount - paidAmount);
-                        });
-                    })();
-                </script>
-            }
             <div class="col-sm-6 col-lg-3">
                 <div class="border rounded p-3 h-100">
                     <div class="text-muted small">الأرباح</div>
-                    <strong>@Model.Profit.ToString("#,##0.####")</strong>
+                    <strong data-summary-profit>@Model.Profit.ToString("#,##0.####")</strong>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const priceInput = document.querySelector("[data-farm-price]");
+            const weightInput = document.querySelector("[data-farm-weight]");
+            const paymentInput = document.querySelector("[data-farm-payment]");
+            const additionInput = document.querySelector("[data-farm-addition]");
+            const discountInput = document.querySelector("[data-farm-discount]");
+            const mealClientSearch = document.getElementById("mealClientSearch");
+            const missingClientSearch = document.getElementById("missingClientSearch");
+            const missingClientSelect = document.getElementById("missingClientId");
+            const panehInputs = document.querySelectorAll("[data-paneh-input]");
+            const grossWeightInput = document.getElementById("GrossWeight");
+            const panehGrossWeightInput = document.getElementById("PanehGrossWeight");
+
+            document.querySelectorAll("[data-insert-operator]").forEach(button => {
+                button.addEventListener("mousedown", event => event.preventDefault());
+                button.addEventListener("click", () => {
+                    const input = document.getElementById(button.dataset.target);
+                    if (!input) return;
+
+                    input.focus();
+                    const start = input.selectionStart ?? input.value.length;
+                    const end = input.selectionEnd ?? start;
+                    input.setRangeText(button.dataset.insertOperator, start, end, "end");
+                });
+            });
+
+            const previousBalance = @Model.PreviousFarmBalance.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+            const formatter = new Intl.NumberFormat("en-US", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 4
+            });
+
+            function recalculate() {
+                const farmPrice = parseFloat(priceInput ? priceInput.value : 0) || 0;
+                const farmWeight = parseFloat(weightInput ? weightInput.value : 0) || 0;
+                const paidAmount = parseFloat(paymentInput ? paymentInput.value : 0) || 0;
+                const additionAmount = parseFloat(additionInput ? additionInput.value : 0) || 0;
+                const discountAmount = parseFloat(discountInput ? discountInput.value : 0) || 0;
+
+                // Sync all hidden fields across forms
+                document.querySelectorAll(".sync-farm-price").forEach(el => el.value = farmPrice);
+                document.querySelectorAll(".sync-farm-weight").forEach(el => el.value = farmWeight);
+                document.querySelectorAll(".sync-farm-paid").forEach(el => el.value = paidAmount);
+                document.querySelectorAll(".sync-farm-addition").forEach(el => el.value = additionAmount);
+                document.querySelectorAll(".sync-farm-discount").forEach(el => el.value = discountAmount);
+
+                let totalMeal = 0;
+                let totalNetWeight = 0;
+                let totalGrossWeight = 0;
+                let totalEmptyWeight = 0;
+
+                // Recalculate transaction rows
+                const rows = document.querySelectorAll("[data-transaction-row]");
+                rows.forEach(row => {
+                    const isDeleted = row.dataset.isDeleted === "true";
+                    const grossWeight = parseFloat(row.dataset.grossWeight) || 0;
+                    const emptyWeight = parseFloat(row.dataset.emptyWeight) || 0;
+                    const netWeight = parseFloat(row.dataset.netWeight) || 0;
+                    const extraField = parseFloat(row.dataset.extraField) || 0;
+
+                    const rowPricePerKilo = farmPrice + extraField;
+                    const rowMealTotal = netWeight * rowPricePerKilo;
+
+                    const priceCell = row.querySelector("[data-row-kilo-price]");
+                    const totalCell = row.querySelector("[data-row-meal-total]");
+
+                    if (priceCell) priceCell.textContent = formatter.format(rowPricePerKilo);
+                    if (totalCell) totalCell.textContent = formatter.format(rowMealTotal);
+
+                    if (!isDeleted) {
+                        totalGrossWeight += grossWeight;
+                        totalEmptyWeight += emptyWeight;
+                        totalNetWeight += netWeight;
+                        totalMeal += rowMealTotal;
+                    }
+                });
+
+                // Update table footer
+                const footerGrossWeight = document.querySelector("[data-footer-gross-weight]");
+                if (footerGrossWeight) footerGrossWeight.textContent = formatter.format(totalGrossWeight);
+
+                const footerEmptyWeight = document.querySelector("[data-footer-empty-weight]");
+                if (footerEmptyWeight) footerEmptyWeight.textContent = formatter.format(totalEmptyWeight);
+
+                const footerMealTotal = document.querySelector("[data-footer-meal-total]");
+                if (footerMealTotal) footerMealTotal.textContent = formatter.format(totalMeal);
+
+                // Summary calculations
+                // CurrentFarmAccount = FarmPrice * FarmWeight
+                const farmAccount = farmPrice * farmWeight;
+
+                // WeightDifference = NetWeight - FarmWeight
+                const weightDiff = totalNetWeight - farmWeight;
+
+                // TotalFarmAccount = FarmAccount + PreviousFarmBalance + Addition - Discount
+                const totalFarmAccount = farmAccount + previousBalance + additionAmount - discountAmount;
+
+                // RemainingFarmAccount = TotalFarmAccount - PaidAmount
+                const remainingFarm = totalFarmAccount - paidAmount;
+
+                // Profit = MealTotal - CurrentFarmAccount (إجمالي الوجبات ناقص حساب المزرعة)
+                const profit = totalMeal - farmAccount;
+
+                // Update summary UI
+                const summaryWeightDiff = document.querySelector("[data-summary-weight-diff]");
+                if (summaryWeightDiff) summaryWeightDiff.textContent = formatter.format(weightDiff);
+
+                const summaryFarmAccount = document.querySelector("[data-summary-farm-account]");
+                if (summaryFarmAccount) summaryFarmAccount.textContent = formatter.format(farmAccount);
+
+                const remainingOutput = document.querySelector("[data-farm-remaining]");
+                if (remainingOutput) remainingOutput.textContent = formatter.format(remainingFarm);
+
+                const summaryMealTotal = document.querySelector("[data-summary-meal-total]");
+                if (summaryMealTotal) summaryMealTotal.textContent = formatter.format(totalMeal);
+
+                const summaryProfit = document.querySelector("[data-summary-profit]");
+                if (summaryProfit) summaryProfit.textContent = formatter.format(profit);
+            }
+
+            priceInput?.addEventListener("input", recalculate);
+            weightInput?.addEventListener("input", recalculate);
+            paymentInput?.addEventListener("input", recalculate);
+            additionInput?.addEventListener("input", recalculate);
+            discountInput?.addEventListener("input", recalculate);
+
+            mealClientSearch?.addEventListener("input", () => {
+                const search = mealClientSearch.value.trim().toLocaleLowerCase();
+                document.querySelectorAll("[data-transaction-row]").forEach(row => {
+                    row.hidden = !row.dataset.clientName.toLocaleLowerCase().includes(search);
+                });
+            });
+
+            missingClientSearch?.addEventListener("input", () => {
+                const search = missingClientSearch.value.trim().toLocaleLowerCase();
+                Array.from(missingClientSelect.options).forEach((option, index) => {
+                    if (index > 0)
+                        option.hidden = !option.text.toLocaleLowerCase().includes(search);
+                });
+                if (missingClientSelect.selectedOptions.length > 0 &&
+                    missingClientSelect.selectedOptions[0].hidden)
+                    missingClientSelect.value = "";
+            });
+
+            missingClientSelect?.addEventListener("change", () => {
+                const selectedName = missingClientSelect.selectedOptions[0]?.text.trim();
+                const isPanehClient = selectedName === "صفيطه";
+                panehInputs.forEach(element => element.classList.toggle("d-none", !isPanehClient));
+                if (isPanehClient) {
+                    grossWeightInput.required = false;
+                    panehGrossWeightInput.required = false;
+                } else {
+                    grossWeightInput.required = true;
+                    panehGrossWeightInput.required = false;
+                }
+            });
+        })();
+    </script>
+}

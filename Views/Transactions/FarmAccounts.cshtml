@@ -1,0 +1,124 @@
+@model FarmAccountSummaryViewModel
+@{
+    ViewData["Title"] = "حسابات المزارع";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-warehouse me-2 text-success"></i>حسابات المزارع
+        </h4>
+        <a asp-action="FarmMeals" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع لأرشيف الوجبات
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-4">
+            <div class="card card-body h-100">
+                <div class="text-muted small">إجمالي المتبقي علينا للمزارع بعد الدفعات</div>
+                <strong class="fs-4 text-danger">@Model.TotalRemainingOwed.ToString("#,##0.####")</strong>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <div class="card card-body h-100">
+                <div class="text-muted small">إجمالي المدفوع للمزارع</div>
+                <strong class="fs-4 text-success">@Model.TotalPaid.ToString("#,##0.####")</strong>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <div class="card card-body h-100">
+                <div class="text-muted small">إجمالي حساب الوجبات قبل خصم المدفوع</div>
+                <strong class="fs-4">@Model.TotalFarmAccount.ToString("#,##0.####")</strong>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <div class="card card-body h-100">
+                <div class="text-muted small">رصيد لنا لدى المزارع (مدفوع زيادة)</div>
+                <strong class="fs-4 text-primary">@Model.TotalCredit.ToString("#,##0.####")</strong>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <div class="card card-body h-100">
+                <div class="text-muted small">إجمالي مبيعات الوجبات للعملاء</div>
+                <strong class="fs-4">@Model.TotalMealSales.ToString("#,##0.####")</strong>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <div class="card card-body h-100">
+                <div class="text-muted small">إجمالي الأرباح</div>
+                <strong class="fs-4 text-success">@Model.TotalProfit.ToString("#,##0.####")</strong>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Farms.Count == 0)
+    {
+        <div class="alert alert-light">لا توجد حسابات مزارع مسجلة حتى الآن.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover table-bordered align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم المزرعة</th>
+                        <th>عدد الوجبات</th>
+                        <th>وزن المزرعة</th>
+                        <th>إجمالي حساب المزرعة</th>
+                        <th>الإضافة</th>
+                        <th>الخصم</th>
+                        <th>المدفوع</th>
+                        <th>المتبقي علينا</th>
+                        <th>رصيد لنا لدى المزرعة</th>
+                        <th>مبيعات وجبات العملاء</th>
+                        <th>الأرباح</th>
+                        <th>التفاصيل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var index = 0; index < Model.Farms.Count; index++)
+                    {
+                        var farm = Model.Farms[index];
+                        <tr>
+                            <td>@(index + 1)</td>
+                            <td>@farm.FarmName</td>
+                            <td>@farm.BatchCount</td>
+                            <td>@farm.FarmWeight.ToString("#,##0.####")</td>
+                            <td>@farm.FarmAccount.ToString("#,##0.####")</td>
+                            <td class="text-success">@farm.Addition.ToString("#,##0.####")</td>
+                            <td class="text-danger">@farm.Discount.ToString("#,##0.####")</td>
+                            <td class="text-success">@farm.Paid.ToString("#,##0.####")</td>
+                            <td class="text-danger fw-bold">@farm.RemainingOwed.ToString("#,##0.####")</td>
+                            <td class="text-primary">@farm.Credit.ToString("#,##0.####")</td>
+                            <td>@farm.MealSales.ToString("#,##0.####")</td>
+                            <td class="fw-bold">@farm.Profit.ToString("#,##0.####")</td>
+                            <td>
+                                <a asp-action="FarmAccountDetails" asp-route-farmName="@farm.FarmName"
+                                   class="btn btn-sm btn-outline-success text-nowrap">
+                                    <i class="fas fa-list me-1"></i> كشف الحساب
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="table-dark fw-bold">
+                        <td colspan="3">الإجمالي</td>
+                        <td>@Model.Farms.Sum(farm => farm.FarmWeight).ToString("#,##0.####")</td>
+                        <td>@Model.TotalFarmAccount.ToString("#,##0.####")</td>
+                        <td>@Model.TotalAddition.ToString("#,##0.####")</td>
+                        <td>@Model.TotalDiscount.ToString("#,##0.####")</td>
+                        <td>@Model.TotalPaid.ToString("#,##0.####")</td>
+                        <td>@Model.TotalRemainingOwed.ToString("#,##0.####")</td>
+                        <td>@Model.TotalCredit.ToString("#,##0.####")</td>
+                        <td>@Model.TotalMealSales.ToString("#,##0.####")</td>
+                        <td>@Model.TotalProfit.ToString("#,##0.####")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+</div>

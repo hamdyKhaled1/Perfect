@@ -17,7 +17,10 @@ namespace HagImamAccounts.Controllers
             TreasuryAccount.AbuMazenInstaPay,
             TreasuryAccount.HajjImamVodafoneCash,
             TreasuryAccount.HajjImamInstaPay,
-            TreasuryAccount.General
+            TreasuryAccount.General,
+            TreasuryAccount.MohamedAbdelrahmanCash,
+            TreasuryAccount.MohamedAbdelrahmanVodafoneCash,
+            TreasuryAccount.MohamedAbdelrahmanInstaPay
         };
 
         private readonly ApplicationDbContext _context;
@@ -73,6 +76,30 @@ namespace HagImamAccounts.Controllers
                 .FirstOrDefaultAsync(item => item.Id == id && item.Account == account);
             if (entry == null)
                 return NotFound();
+
+            if (await IsFridgeLinkedAsync(entry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بالتلاجة؛ عدّلها من صفحة التلاجة أو من حساب عميل الاستربس.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
+            if (await IsExpenseLinkedAsync(entry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بمصروف؛ عدّلها من صفحة المصروفات.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
+            if (await IsFarmPaymentLinkedAsync(entry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بدفعة مزرعة؛ عدّلها أو احذفها من كشف حساب المزرعة.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
+            if (await IsEmployeeCustodyLinkedAsync(entry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بعهدة موظف؛ لا يمكن تعديلها من الخزنة.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
 
             return View(new TreasuryMovementViewModel
             {
@@ -157,6 +184,70 @@ namespace HagImamAccounts.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> WalletMovement(
+            TreasuryAccount account,
+            [Bind(Prefix = "NewWalletMovement")] TreasuryWalletMovementInputViewModel movement)
+        {
+            if (!IsValidAccount(account) || !IsWalletAccount(account))
+                return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                var page = await BuildAccountPageAsync(account);
+                page.NewWalletMovement = movement;
+                return View("Account", page);
+            }
+
+            var cashAccount = GetOwnerCashAccount(account);
+            var sourceAccount = movement.IsFreeze ? cashAccount : account;
+            var destinationAccount = movement.IsFreeze ? account : cashAccount;
+            var actionName = movement.IsFreeze ? "تجميد" : "تسييل";
+            var statement = movement.Statement.Trim();
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            var availableBalance = await _context.TreasuryEntries
+                .Where(entry => entry.Account == sourceAccount)
+                .SumAsync(entry => entry.Incoming - entry.Outgoing);
+
+            if (movement.Amount > availableBalance)
+            {
+                await transaction.RollbackAsync();
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"الرصيد غير كافٍ في {AccountName(sourceAccount)}. الرصيد الحالي: {availableBalance:#,##0.####}.");
+
+                var page = await BuildAccountPageAsync(account);
+                page.NewWalletMovement = movement;
+                return View("Account", page);
+            }
+
+            var transferId = Guid.NewGuid();
+            _context.TreasuryEntries.AddRange(
+                new TreasuryEntry
+                {
+                    Account = sourceAccount,
+                    Statement = $"{actionName} إلى {AccountName(destinationAccount)}: {statement}",
+                    Outgoing = movement.Amount,
+                    Date = movement.Date.Date,
+                    TransferId = transferId
+                },
+                new TreasuryEntry
+                {
+                    Account = destinationAccount,
+                    Statement = $"{actionName} من {AccountName(sourceAccount)}: {statement}",
+                    Incoming = movement.Amount,
+                    Date = movement.Date.Date,
+                    TransferId = transferId
+                });
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            TempData["Success"] = $"تم تسجيل {actionName} بين المحفظة والخزنة النقدية.";
+            return RedirectToAction(nameof(Account), new { account });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> TransferToGeneral(
             TreasuryAccount account,
             [Bind(Prefix = "NewTransfer")] TreasuryTransferInputViewModel transfer)
@@ -232,6 +323,30 @@ namespace HagImamAccounts.Controllers
             if (existingEntry == null)
                 return NotFound();
 
+            if (await IsFridgeLinkedAsync(existingEntry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بالتلاجة؛ عدّلها من صفحة التلاجة أو من حساب عميل الاستربس.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
+            if (await IsExpenseLinkedAsync(existingEntry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بمصروف؛ عدّلها من صفحة المصروفات.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
+            if (await IsFarmPaymentLinkedAsync(existingEntry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بدفعة مزرعة؛ عدّلها أو احذفها من كشف حساب المزرعة.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
+            if (await IsEmployeeCustodyLinkedAsync(existingEntry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بعهدة موظف؛ لا يمكن تعديلها من الخزنة.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
             var isTransfer = existingEntry.TransferId.HasValue;
             if (isTransfer)
             {
@@ -285,13 +400,14 @@ namespace HagImamAccounts.Controllers
                 }
 
                 var transferStatement = transfer.Statement.Trim();
+                var transferAction = GetTransferAction(existingEntry);
                 existingEntry.Statement = isSourceEntry
-                    ? $"تحويل إلى الخزنة العمومية: {transferStatement}"
-                    : $"تحويل من {AccountName(pairedEntry.Account)}: {transferStatement}";
+                    ? $"{transferAction} إلى {AccountName(pairedEntry.Account)}: {transferStatement}"
+                    : $"{transferAction} من {AccountName(pairedEntry.Account)}: {transferStatement}";
                 existingEntry.Date = transfer.Date.Date;
                 pairedEntry.Statement = isSourceEntry
-                    ? $"تحويل من {AccountName(account)}: {transferStatement}"
-                    : $"تحويل إلى الخزنة العمومية: {transferStatement}";
+                    ? $"{transferAction} من {AccountName(account)}: {transferStatement}"
+                    : $"{transferAction} إلى {AccountName(account)}: {transferStatement}";
                 pairedEntry.Date = transfer.Date.Date;
                 if (isSourceEntry)
                 {
@@ -343,6 +459,30 @@ namespace HagImamAccounts.Controllers
             if (entry == null)
                 return NotFound();
 
+            if (await IsFridgeLinkedAsync(entry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بالتلاجة؛ احذفها من صفحة التلاجة أو من حساب عميل الاستربس.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
+            if (await IsExpenseLinkedAsync(entry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بمصروف؛ احذفها من صفحة المصروفات.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
+            if (await IsFarmPaymentLinkedAsync(entry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بدفعة مزرعة؛ احذفها من كشف حساب المزرعة.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
+            if (await IsEmployeeCustodyLinkedAsync(entry.Id))
+            {
+                TempData["Error"] = "هذه الحركة مرتبطة بعهدة موظف؛ لا يمكن حذفها من الخزنة.";
+                return RedirectToAction(nameof(Account), new { account });
+            }
+
             if (entry.TransferId.HasValue)
             {
                 var transferEntries = await _context.TreasuryEntries
@@ -371,6 +511,18 @@ namespace HagImamAccounts.Controllers
                 .ThenBy(entry => entry.Id)
                 .ToListAsync();
 
+            var fridgeLinkedIds = await _context.FridgeEntries
+                .Where(entry => entry.TreasuryEntryId != null)
+                .Select(entry => entry.TreasuryEntryId!.Value)
+                .ToListAsync();
+            var linkedSet = fridgeLinkedIds.ToHashSet();
+
+            var expenseLinkedIds = await _context.ExpenseEntries
+                .Where(entry => entry.TreasuryEntryId != null)
+                .Select(entry => entry.TreasuryEntryId!.Value)
+                .ToListAsync();
+            var expenseLinkedSet = expenseLinkedIds.ToHashSet();
+
             decimal balance = 0;
             var rows = new List<TreasuryMovementRowViewModel>(entries.Count);
             foreach (var entry in entries)
@@ -385,7 +537,10 @@ namespace HagImamAccounts.Controllers
                     Incoming = entry.Incoming,
                     Outgoing = entry.Outgoing,
                     Balance = balance,
-                    IsTransfer = entry.TransferId.HasValue
+                    IsTransfer = entry.TransferId.HasValue,
+                    IsFridgeLinked = linkedSet.Contains(entry.Id),
+                    IsExpenseLinked = expenseLinkedSet.Contains(entry.Id),
+                    TransactionId = entry.TransactionId
                 });
             }
             rows.Reverse();
@@ -416,20 +571,55 @@ namespace HagImamAccounts.Controllers
             if (!entry.TransferId.HasValue)
                 return entry.Statement;
 
-            const string sourcePrefix = "تحويل إلى الخزنة العمومية: ";
-            const string generalPrefix = "تحويل من ";
-            if (entry.Statement.StartsWith(sourcePrefix, StringComparison.Ordinal))
-                return entry.Statement[sourcePrefix.Length..];
             var separatorIndex = entry.Statement.IndexOf(": ", StringComparison.Ordinal);
-            return entry.Statement.StartsWith(generalPrefix, StringComparison.Ordinal) && separatorIndex >= 0
+            return (entry.Statement.StartsWith("تحويل ", StringComparison.Ordinal) ||
+                    entry.Statement.StartsWith("تسييل ", StringComparison.Ordinal) ||
+                    entry.Statement.StartsWith("تجميد ", StringComparison.Ordinal)) &&
+                    separatorIndex >= 0
                 ? entry.Statement[(separatorIndex + 2)..]
                 : entry.Statement;
         }
 
         private static string GetTransferStatement(TreasuryEntry entry) => GetEntryStatement(entry);
 
+        private static string GetTransferAction(TreasuryEntry entry) =>
+            entry.Statement.StartsWith("تسييل ", StringComparison.Ordinal) ? "تسييل" :
+            entry.Statement.StartsWith("تجميد ", StringComparison.Ordinal) ? "تجميد" :
+            "تحويل";
+
         private static bool IsValidAccount(TreasuryAccount account) =>
             Enum.IsDefined(account) && Accounts.Contains(account);
+
+        private static bool IsWalletAccount(TreasuryAccount account) =>
+            account is TreasuryAccount.AbuMazenVodafoneCash
+                or TreasuryAccount.AbuMazenInstaPay
+                or TreasuryAccount.HajjImamVodafoneCash
+                or TreasuryAccount.HajjImamInstaPay
+                or TreasuryAccount.MohamedAbdelrahmanVodafoneCash
+                or TreasuryAccount.MohamedAbdelrahmanInstaPay;
+
+        private static TreasuryAccount GetOwnerCashAccount(TreasuryAccount account) => account switch
+        {
+            TreasuryAccount.AbuMazenVodafoneCash or TreasuryAccount.AbuMazenInstaPay =>
+                TreasuryAccount.AbuMazenCash,
+            TreasuryAccount.HajjImamVodafoneCash or TreasuryAccount.HajjImamInstaPay =>
+                TreasuryAccount.HajjImamCash,
+            TreasuryAccount.MohamedAbdelrahmanVodafoneCash or TreasuryAccount.MohamedAbdelrahmanInstaPay =>
+                TreasuryAccount.MohamedAbdelrahmanCash,
+            _ => throw new ArgumentOutOfRangeException(nameof(account))
+        };
+
+        private Task<bool> IsFridgeLinkedAsync(int treasuryEntryId) =>
+            _context.FridgeEntries.AnyAsync(entry => entry.TreasuryEntryId == treasuryEntryId);
+
+        private Task<bool> IsExpenseLinkedAsync(int treasuryEntryId) =>
+            _context.ExpenseEntries.AnyAsync(entry => entry.TreasuryEntryId == treasuryEntryId);
+
+        private Task<bool> IsFarmPaymentLinkedAsync(int treasuryEntryId) =>
+            _context.FarmPayments.AnyAsync(payment => payment.TreasuryEntryId == treasuryEntryId);
+
+        private Task<bool> IsEmployeeCustodyLinkedAsync(int treasuryEntryId) =>
+            _context.EmployeeCustodies.AnyAsync(custody => custody.TreasuryEntryId == treasuryEntryId);
 
         private static string AccountName(TreasuryAccount account) => account switch
         {
@@ -440,6 +630,9 @@ namespace HagImamAccounts.Controllers
             TreasuryAccount.HajjImamVodafoneCash => "فودافون كاش - الحاج إمام",
             TreasuryAccount.HajjImamInstaPay => "إنستا باي - الحاج إمام",
             TreasuryAccount.General => "الخزنة العمومية",
+            TreasuryAccount.MohamedAbdelrahmanCash => "خزنة محمد عبدالرحمن - نقدي",
+            TreasuryAccount.MohamedAbdelrahmanVodafoneCash => "فودافون كاش - محمد عبدالرحمن",
+            TreasuryAccount.MohamedAbdelrahmanInstaPay => "إنستا باي - محمد عبدالرحمن",
             _ => throw new ArgumentOutOfRangeException(nameof(account))
         };
     }

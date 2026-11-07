@@ -1,0 +1,98 @@
+@using System.Globalization
+@using HagImamAccounts.Services
+@inject CapitalService CapitalService
+@{
+    var snapshot = await CapitalService.GetSnapshotAsync();
+    var current = snapshot.TotalCapital;
+
+    var comparison = await CapitalService.GetManualCapitalAsync();
+    var componentChanges = comparison == null
+        ? new List<(string Name, decimal Difference)>()
+        : new[]
+        {
+            (Name: "أرصدة العملاء", Difference: snapshot.ClientBalances - comparison.ClientBalances),
+            (Name: "أرصدة العملاء الخارج", Difference: snapshot.OutsideCustomerBalances - comparison.OutsideCustomerBalances),
+            (Name: "الخزن والمحافظ", Difference: snapshot.TreasuryBalance - comparison.TreasuryBalance),
+            (Name: "المصروفات غير المسددة من الخزن", Difference: snapshot.NetExpensesWithoutTreasury - comparison.NetExpensesWithoutTreasury),
+            (Name: "حساب المزارع", Difference: snapshot.FarmAccount - comparison.FarmAccount)
+        }.Where(change => change.Difference != 0).ToList();
+    var difference = comparison == null ? 0 : current - comparison.ManualCapital;
+    var changed = comparison != null && difference != 0;
+    var isNegative = current < 0;
+    var comparisonError = TempData["CapitalComparisonError"] as string;
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+
+    var stripClass = "capital-strip";
+    if (changed) stripClass += " capital-strip-changed";
+    else if (isNegative) stripClass += " capital-strip-negative";
+}
+
+<div class="@stripClass" data-capital-strip>
+    <div class="container d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <a asp-controller="Capital" asp-action="Index" class="capital-strip-link"
+           title="عرض تفاصيل رأس مال الشركة">
+            <i class="fas fa-chart-line"></i>
+            <span class="capital-strip-label">إجمالي رأس مال الشركة</span>
+            <span class="capital-strip-value">@current.ToString("#,##0.####")</span>
+            <i class="fas fa-chevron-left capital-strip-arrow"></i>
+        </a>
+
+        <form asp-controller="Capital" asp-action="Compare" method="post" class="capital-compare-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <label for="manualCapital" class="form-label mb-0">رأس المال اليدوي</label>
+            <input id="manualCapital" name="manualCapital" type="number" step="0.0001"
+                   value="@(comparison?.ManualCapital.ToString("0.####", CultureInfo.InvariantCulture))"
+                   class="form-control form-control-sm" placeholder="أدخل رأس المال" required
+                   onchange="this.form.requestSubmit()" aria-label="رأس المال اليدوي" />
+            <span class="capital-compare-hint">تتم المقارنة تلقائيًا</span>
+        </form>
+
+        @if (!string.IsNullOrEmpty(comparisonError))
+        {
+            <span class="capital-strip-hint text-danger">@comparisonError</span>
+        }
+        else if (comparison == null)
+        {
+            <span class="capital-strip-hint">
+                أدخل رأس المال اليدوي للمقارنة تلقائيًا
+            </span>
+        }
+        else if (!changed)
+        {
+            <span class="capital-strip-comparison-ok">
+                <i class="fas fa-circle-check me-1"></i>رأس المال مظبوط: @current.ToString("#,##0.####")
+            </span>
+        }
+        else
+        {
+            <div class="capital-strip-delta">
+                <div>
+                    <i class="fas @(difference > 0 ? "fa-arrow-trend-up" : difference < 0 ? "fa-arrow-trend-down" : "fa-arrows-left-right") me-1"></i>
+                    @if (difference != 0)
+                    {
+                        <span>رأس المال المحسوب @(difference > 0 ? "أعلى" : "أقل") من اليدوي بمقدار <strong>@Math.Abs(difference).ToString("#,##0.####")</strong></span>
+                    }
+                    else
+                    {
+                        <span>إجمالي رأس المال لم يتغير، لكن بعض الأقسام تغيرت</span>
+                    }
+                </div>
+                @if (componentChanges.Count > 0)
+                {
+                    @foreach (var change in componentChanges)
+                    {
+                        <div class="small">
+                            @change.Name: @(change.Difference > 0 ? "زاد" : "قل")
+                            <strong>@Math.Abs(change.Difference).ToString("#,##0.####")</strong>
+                        </div>
+                    }
+                }
+                else if (difference != 0)
+                {
+                    <div class="small">لم تتغير الأقسام منذ آخر مقارنة؛ الفرق كان موجودًا عند إدخال الرقم اليدوي.</div>
+                }
+            </div>
+        }
+    </div>
+</div>

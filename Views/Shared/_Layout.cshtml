@@ -63,6 +63,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" asp-controller="Transactions" asp-action="FarmAccounts">
+                            <i class="fas fa-warehouse me-1"></i> حسابات المزارع
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" asp-controller="Treasury" asp-action="Index">
                             <i class="fas fa-vault me-1"></i> الخزن
                         </a>
@@ -72,10 +77,43 @@
                             <i class="fas fa-money-bill-transfer me-1"></i> المصروفات
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Payroll" asp-action="Index">
+                            <i class="fas fa-money-check-dollar me-1"></i> المرتبات
+                        </a>
+                    </li>
+                    <li class="nav-item d-flex align-items-center ms-lg-2">
+                        @if (User.IsInRole(HagImamAccounts.Services.PortalRoles.SuperAdmin))
+                        {
+                            <span class="badge bg-success">سوبر أدمن</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">قراءة فقط</span>
+                        }
+                    </li>
+                    <li class="nav-item d-flex align-items-center">
+                        <span class="navbar-text px-2">@User.Identity?.Name</span>
+                    </li>
+                    <li class="nav-item d-flex align-items-center">
+                        <form asp-controller="Access" asp-action="Logout" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-light">تسجيل الخروج</button>
+                        </form>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
+
+    @if (User.IsInRole(HagImamAccounts.Services.PortalRoles.Admin))
+    {
+        <div class="alert alert-info text-center rounded-0 mb-0">
+            أنت تستخدم حساب قراءة فقط؛ لا يمكن إضافة البيانات أو تعديلها أو حذفها.
+        </div>
+    }
+
+    <!-- إجمالي رأس مال الشركة (ظاهر في كل الصفحات) -->
+    <partial name="_CapitalBadge" />
 
     <!-- Main Content -->
     <main class="container my-4">

@@ -43,6 +43,8 @@
         <div class="card-body">
             <h5 class="fw-bold mb-3">إضافة حركة يدوية</h5>
             <form asp-action="AddEntry" method="post">
+                <input type="hidden" name="page" value="@Model.Page" />
+                <input type="hidden" name="pageSize" value="@Model.PageSize" />
                 <div class="row g-3 align-items-end">
                     <div class="col-lg-4">
                         <label asp-for="NewEntry.Statement" class="form-label">البيان</label>
@@ -60,19 +62,43 @@
                         <span asp-validation-for="NewEntry.Outgoing" class="text-danger small"></span>
                     </div>
                     <div class="col-sm-6 col-lg-2">
+                        <label asp-for="NewEntry.TreasuryAccount" class="form-label">الصادر من</label>
+                        <select asp-for="NewEntry.TreasuryAccount" class="form-select">
+                            <option value="">— اختر الخزنة —</option>
+                            @foreach (var account in ExpenseEntryInputViewModel.OutgoingTreasuryAccounts)
+                            {
+                                var balance = Model.NewEntry.TreasuryBalances.TryGetValue(account, out var amount) ? amount : 0m;
+                                <option value="@account">@TreasuryEntry.GetAccountName(account) — الرصيد: @balance.ToString("#,##0.####")</option>
+                            }
+                        </select>
+                        <span asp-validation-for="NewEntry.TreasuryAccount" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
                         <label asp-for="NewEntry.Date" class="form-label">التاريخ</label>
                         <input asp-for="NewEntry.Date" type="date" class="form-control" />
                         <span asp-validation-for="NewEntry.Date" class="text-danger small"></span>
                     </div>
-                    <div class="col-lg-2">
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="fas fa-plus me-1"></i> تسجيل الحركة
-                        </button>
-                    </div>
+                </div>
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i> تسجيل الحركة
+                    </button>
                 </div>
             </form>
-            <div class="text-muted small mt-2">أدخل المبلغ في الوارد أو الصادر فقط. أرباح دفعات الوجبات تُسجل تلقائيًا في الوارد.</div>
+            <div class="text-muted small mt-2">أدخل المبلغ في الوارد أو الصادر فقط. عند تسجيل صادر اختر الخزنة ليتم خصم المبلغ منها مباشرة. أرباح دفعات الوجبات تُسجل تلقائيًا في الوارد.</div>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-end mb-2">
+        <form asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <label for="expensePageSize" class="form-label mb-0">الحركات بالصفحة</label>
+            <select id="expensePageSize" name="pageSize" class="form-select w-auto" onchange="this.form.requestSubmit()">
+                <option value="10" selected="@(Model.PageSize == 10)">10</option>
+                <option value="25" selected="@(Model.PageSize == 25)">25</option>
+                <option value="50" selected="@(Model.PageSize == 50)">50</option>
+            </select>
+            <input type="hidden" name="page" value="1" />
+        </form>
     </div>
 
     <div class="table-responsive">
@@ -84,13 +110,16 @@
                     <th>البيان</th>
                     <th>وارد</th>
                     <th>صادر</th>
+                    <th>الخزنة</th>
+                    <th>الباقي بعد الحركة</th>
+                    <th>الإجراءات</th>
                 </tr>
             </thead>
             <tbody>
                 @if (Model.Entries.Count == 0)
                 {
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">لا توجد حركات مسجلة.</td>
+                        <td colspan="8" class="text-center text-muted py-4">لا توجد حركات مسجلة.</td>
                     </tr>
                 }
                 else
@@ -99,15 +128,106 @@
                     {
                         var entry = Model.Entries[index];
                         <tr>
-                            <td>@(index + 1)</td>
+                            <td>@((Model.Page - 1) * Model.PageSize + index + 1)</td>
                             <td class="text-nowrap">@entry.Date.ToString("dd/MM/yyyy")</td>
                             <td>@entry.Statement</td>
                             <td>@entry.Incoming.ToString("#,##0.####")</td>
                             <td>@entry.Outgoing.ToString("#,##0.####")</td>
+                            <td>
+                                @if (entry.TreasuryEntry != null)
+                                {
+                                    @TreasuryEntry.GetAccountName(entry.TreasuryEntry.Account)
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td class="fw-bold @(Model.RemainingAfterEntry[entry.Id] < 0 ? "text-danger" : "text-success")">
+                                @Model.RemainingAfterEntry[entry.Id].ToString("#,##0.####")
+                            </td>
+                            <td class="text-nowrap">
+                                @if (entry.FarmMealBatchId.HasValue)
+                                {
+                                    <a asp-controller="Transactions" asp-action="FarmMealDetails"
+                                       asp-route-id="@entry.FarmMealBatchId.Value" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-eye me-1"></i> التوزيع
+                                    </a>
+                                    <span class="text-muted small">تلقائية</span>
+                                }
+                                else if (entry.PayrollEntryId.HasValue)
+                                {
+                                    <a asp-controller="Payroll" asp-action="Entry"
+                                       asp-route-employeeId="@entry.PayrollEntry?.EmployeeId"
+                                       asp-route-year="@entry.PayrollEntry?.Year"
+                                       asp-route-month="@entry.PayrollEntry?.Month"
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-eye me-1"></i> المرتب
+                                    </a>
+                                    <span class="text-muted small">تلقائية</span>
+                                }
+                                else
+                                {
+                                    <a asp-action="EditEntry" asp-route-id="@entry.Id"
+                                       asp-route-page="@Model.Page" asp-route-pageSize="@Model.PageSize"
+                                       class="btn btn-sm btn-outline-warning" title="تعديل الحركة">
+                                        <i class="fas fa-edit me-1"></i> تعديل
+                                    </a>
+                                    <form asp-action="DeleteEntry" asp-route-id="@entry.Id" method="post"
+                                          class="d-inline"
+                                          data-confirm="هل أنت متأكد من حذف الحركة '@entry.Statement'؟">
+                                        <input type="hidden" name="page" value="@Model.Page" />
+                                        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف الحركة">
+                                            <i class="fas fa-trash me-1"></i> حذف
+                                        </button>
+                                    </form>
+                                }
+                            </td>
                         </tr>
                     }
                 }
             </tbody>
         </table>
     </div>
+    @if (Model.TotalPages > 1)
+    {
+        var firstPage = Math.Max(1, Model.Page - 2);
+        var lastPage = Math.Min(Model.TotalPages, firstPage + 4);
+        firstPage = Math.Max(1, lastPage - 4);
+        <nav class="mt-3" aria-label="التنقل بين صفحات المصروفات">
+            <ul class="pagination justify-content-center flex-wrap">
+                <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="1"
+                       asp-route-pageSize="@Model.PageSize">الأولى</a>
+                </li>
+                <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)"
+                       asp-route-pageSize="@Model.PageSize">السابق</a>
+                </li>
+                @for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++)
+                {
+                    <li class="page-item @(pageNumber == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@pageNumber"
+                           asp-route-pageSize="@Model.PageSize">@pageNumber</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)"
+                       asp-route-pageSize="@Model.PageSize">التالي</a>
+                </li>
+                <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@Model.TotalPages"
+                       asp-route-pageSize="@Model.PageSize">الأخيرة</a>
+                </li>
+            </ul>
+        </nav>
+    }
+    @if (Model.TotalCount > 0)
+    {
+        <p class="text-muted text-center mt-3">
+            عرض @((Model.Page - 1) * Model.PageSize + 1) إلى @Math.Min(Model.Page * Model.PageSize, Model.TotalCount)
+            من @Model.TotalCount حركة
+        </p>
+    }
 </div>

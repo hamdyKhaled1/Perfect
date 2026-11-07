@@ -1,0 +1,275 @@
+@model PayrollMonthViewModel
+@{
+    ViewData["Title"] = "المرتبات";
+    var years = Enumerable.Range(DateTime.Today.Year - 5, 7).ToList();
+    if (!years.Contains(Model.Year))
+    {
+        years.Add(Model.Year);
+        years = years.OrderBy(year => year).ToList();
+    }
+}
+
+<div class="fade-in">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="fas fa-money-check-dollar me-2 text-success"></i>مرتبات @Model.MonthLabel
+            </h3>
+            <div class="text-muted">مرتبات الموظفين مقسمة بالشهور مع السلف والغياب والخصومات.</div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Employees" class="btn btn-outline-dark">
+                <i class="fas fa-users me-1"></i> الموظفون
+            </a>
+            <a asp-action="Advances" class="btn btn-outline-dark">
+                <i class="fas fa-hand-holding-dollar me-1"></i> السلف
+            </a>
+            <a asp-action="Custodies" class="btn btn-outline-dark">
+                <i class="fas fa-wallet me-1"></i> العهد
+            </a>
+            <a asp-action="CreateAdvance" class="btn btn-outline-success">
+                <i class="fas fa-plus me-1"></i> سلفة جديدة
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-3 align-items-end">
+                <div class="col-sm-6 col-md-3">
+                    <label for="payrollMonth" class="form-label">الشهر</label>
+                    <select id="payrollMonth" name="month" class="form-select">
+                        @for (var monthNumber = 1; monthNumber <= 12; monthNumber++)
+                        {
+                            <option value="@monthNumber" selected="@(monthNumber == Model.Month)">
+                                @HagImamAccounts.Models.PayrollEntry.MonthNames[monthNumber - 1]
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label for="payrollYear" class="form-label">السنة</label>
+                    <select id="payrollYear" name="year" class="form-select">
+                        @foreach (var year in years)
+                        {
+                            <option value="@year" selected="@(year == Model.Year)">@year</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-search me-1"></i> عرض الشهر
+                    </button>
+                </div>
+                <div class="col-md-3 text-md-end">
+                    <div class="text-muted small">
+                        من @Model.MonthStart.ToString("dd/MM/yyyy") إلى @Model.MonthEnd.ToString("dd/MM/yyyy")
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card card-dashboard border-primary h-100">
+                <div class="card-body">
+                    <div class="text-muted">إجمالي المرتبات الأساسية</div>
+                    <div class="fs-4 fw-bold">@Model.TotalBaseSalary.ToString("#,##0.####")</div>
+                    <div class="small text-muted">@Model.RecordedCount من @Model.Rows.Count مسجل</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card card-dashboard border-danger h-100">
+                <div class="card-body">
+                    <div class="text-muted">إجمالي الخصومات</div>
+                    <div class="fs-4 fw-bold text-danger">
+                        @((Model.TotalAbsenceDeduction + Model.TotalAdvancesDeduction + Model.TotalOtherDeductions).ToString("#,##0.####"))
+                    </div>
+                    <div class="small text-muted">
+                        غياب @Model.TotalAbsenceDeduction.ToString("#,##0.####") ·
+                        سلف @Model.TotalAdvancesDeduction.ToString("#,##0.####") ·
+                        أخرى @Model.TotalOtherDeductions.ToString("#,##0.####")
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card card-dashboard border-success h-100">
+                <div class="card-body">
+                    <div class="text-muted">صافي المستحق</div>
+                    <div class="fs-4 fw-bold text-success">@Model.TotalNetSalary.ToString("#,##0.####")</div>
+                    <div class="small text-muted">مكافآت @Model.TotalBonus.ToString("#,##0.####")</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card card-dashboard border-warning h-100">
+                <div class="card-body">
+                    <div class="text-muted">تم صرفه / لم يُصرف</div>
+                    <div class="fs-4 fw-bold">@Model.TotalPaid.ToString("#,##0.####")</div>
+                    <div class="small text-muted">
+                        متبقي @Model.TotalPending.ToString("#,##0.####") ·
+                        @Model.PaidCount مصروف / @Model.PendingCount غير مكتمل
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>الموظف</th>
+                    <th>الأساسي</th>
+                    <th>غياب (يوم)</th>
+                    <th>خصم الغياب</th>
+                    <th>السلف</th>
+                    <th>خصومات أخرى</th>
+                    <th>مكافأة</th>
+                    <th>الصافي</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td colspan="11" class="text-center text-muted py-4">
+                            لا يوجد موظفون مسجلون.
+                            <a asp-action="CreateEmployee">أضف موظفًا جديدًا</a>.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @for (var index = 0; index < Model.Rows.Count; index++)
+                    {
+                        var row = Model.Rows[index];
+                        var entry = row.PayrollEntry;
+                        <tr>
+                            <td>@(index + 1)</td>
+                            <td class="fw-bold text-nowrap">
+                                @row.Employee.Name
+                                @if (!row.Employee.IsActive)
+                                {
+                                    <span class="badge bg-secondary ms-1">موقوف</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(row.Employee.JobTitle))
+                                {
+                                    <div class="small text-muted">@row.Employee.JobTitle</div>
+                                }
+                            </td>
+                            <td>@((entry?.BaseSalary ?? row.Employee.MonthlySalary).ToString("#,##0.####"))</td>
+                            <td>@(entry?.AbsenceDays.ToString() ?? "—")</td>
+                            <td>@(entry?.AbsenceDeduction.ToString("#,##0.####") ?? "—")</td>
+                            <td>
+                                @if (entry != null)
+                                {
+                                    @entry.AdvancesDeduction.ToString("#,##0.####")
+                                }
+                                else if (row.UnpaidAdvancesCount > 0)
+                                {
+                                    <span class="text-warning fw-bold">
+                                        @row.UnpaidAdvancesTotal.ToString("#,##0.####")
+                                    </span>
+                                    <div class="small text-muted">@row.UnpaidAdvancesCount سلفة غير مخصومة</div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>@(entry?.OtherDeductions.ToString("#,##0.####") ?? "—")</td>
+                            <td>@(entry?.Bonus.ToString("#,##0.####") ?? "—")</td>
+                            <td class="fw-bold @(entry != null && entry.NetSalary < 0 ? "text-danger" : "text-success")">
+                                @(entry?.NetSalary.ToString("#,##0.####") ?? "—")
+                            </td>
+                            <td class="text-nowrap">
+                                @if (entry == null)
+                                {
+                                    <span class="badge bg-secondary">لم يُسجّل</span>
+                                }
+                                else if (entry.IsPaid)
+                                {
+                                    <span class="badge bg-success">مصروف</span>
+                                    @if (entry.PaidDate.HasValue)
+                                    {
+                                        <div class="small text-muted">@entry.PaidDate.Value.ToString("dd/MM/yyyy")</div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">بانتظار الصرف</span>
+                                }
+                            </td>
+                            <td class="text-nowrap">
+                                <a asp-action="Entry" asp-route-employeeId="@row.Employee.Id"
+                                   asp-route-year="@Model.Year" asp-route-month="@Model.Month"
+                                   class="btn btn-sm @(entry == null ? "btn-success" : "btn-outline-warning")">
+                                    <i class="fas @(entry == null ? "fa-plus" : "fa-edit") me-1"></i>
+                                    @(entry == null ? "تسجيل" : entry.IsPaid ? "عرض" : "تعديل")
+                                </a>
+
+                                @if (entry != null && !entry.IsPaid)
+                                {
+                                    <form asp-action="Pay" asp-route-id="@entry.Id" method="post" class="d-inline"
+                                          data-confirm="هل تريد صرف مرتب @row.Employee.Name لشهر @Model.MonthLabel بمبلغ @entry.NetSalary.ToString("#,##0.####")؟ سيتم تسجيله في المصروفات.">
+                                        <input type="hidden" name="year" value="@Model.Year" />
+                                        <input type="hidden" name="month" value="@Model.Month" />
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="صرف المرتب">
+                                            <i class="fas fa-money-bill-wave me-1"></i> صرف
+                                        </button>
+                                    </form>
+
+                                    <form asp-action="DeleteEntry" asp-route-id="@entry.Id" method="post" class="d-inline"
+                                          data-confirm="هل تريد حذف سجل مرتب @row.Employee.Name لشهر @Model.MonthLabel؟">
+                                        <input type="hidden" name="year" value="@Model.Year" />
+                                        <input type="hidden" name="month" value="@Model.Month" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف السجل">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                }
+
+                                @if (entry != null && entry.IsPaid)
+                                {
+                                    <form asp-action="Unpay" asp-route-id="@entry.Id" method="post" class="d-inline"
+                                          data-confirm="هل تريد التراجع عن صرف مرتب @row.Employee.Name؟ سيتم حذف حركة المصروفات المرتبطة به.">
+                                        <input type="hidden" name="year" value="@Model.Year" />
+                                        <input type="hidden" name="month" value="@Model.Month" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="تراجع عن الصرف">
+                                            <i class="fas fa-rotate-left me-1"></i> تراجع
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+            @if (Model.Rows.Count > 0)
+            {
+                <tfoot>
+                    <tr class="table-dark fw-bold">
+                        <td colspan="2">الإجمالي</td>
+                        <td>@Model.TotalBaseSalary.ToString("#,##0.####")</td>
+                        <td></td>
+                        <td>@Model.TotalAbsenceDeduction.ToString("#,##0.####")</td>
+                        <td>@Model.TotalAdvancesDeduction.ToString("#,##0.####")</td>
+                        <td>@Model.TotalOtherDeductions.ToString("#,##0.####")</td>
+                        <td>@Model.TotalBonus.ToString("#,##0.####")</td>
+                        <td class="text-success">@Model.TotalNetSalary.ToString("#,##0.####")</td>
+                        <td colspan="2">
+                            مصروف: @Model.TotalPaid.ToString("#,##0.####")
+                        </td>
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+</div>

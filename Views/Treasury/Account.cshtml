@@ -2,6 +2,12 @@
 @{
     ViewData["Title"] = Model.AccountName;
     var isGeneral = Model.Account == HagImamAccounts.Models.TreasuryAccount.General;
+    var isWallet = Model.Account is HagImamAccounts.Models.TreasuryAccount.AbuMazenVodafoneCash
+        or HagImamAccounts.Models.TreasuryAccount.AbuMazenInstaPay
+        or HagImamAccounts.Models.TreasuryAccount.HajjImamVodafoneCash
+        or HagImamAccounts.Models.TreasuryAccount.HajjImamInstaPay
+        or HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanVodafoneCash
+        or HagImamAccounts.Models.TreasuryAccount.MohamedAbdelrahmanInstaPay;
 }
 
 <div class="fade-in">
@@ -67,6 +73,46 @@
             </form>
         </div>
     </div>
+
+    @if (isWallet)
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">تسييل / تجميد</h5>
+                <form asp-action="WalletMovement" asp-route-account="@Model.Account" method="post">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-4">
+                            <label asp-for="NewWalletMovement.Statement" class="form-label">البيان</label>
+                            <input asp-for="NewWalletMovement.Statement" class="form-control" maxlength="400" />
+                            <span asp-validation-for="NewWalletMovement.Statement" class="text-danger small"></span>
+                        </div>
+                        <div class="col-sm-6 col-lg-2">
+                            <label asp-for="NewWalletMovement.Amount" class="form-label">المبلغ</label>
+                            <input asp-for="NewWalletMovement.Amount" type="number" min="0.0001" step="0.0001" class="form-control" />
+                            <span asp-validation-for="NewWalletMovement.Amount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-sm-6 col-lg-2">
+                            <label asp-for="NewWalletMovement.IsFreeze" class="form-label">نوع الحركة</label>
+                            <select asp-for="NewWalletMovement.IsFreeze" class="form-select">
+                                <option value="false">تسييل</option>
+                                <option value="true">تجميد</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 col-lg-2">
+                            <label asp-for="NewWalletMovement.Date" class="form-label">التاريخ</label>
+                            <input asp-for="NewWalletMovement.Date" type="date" class="form-control" />
+                        </div>
+                        <div class="col-lg-2">
+                            <button type="submit" class="btn btn-outline-success w-100">
+                                <i class="fas fa-right-left me-1"></i> تسجيل الحركة
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <div class="text-muted small mt-2">التسييل صادر من المحفظة ووارد للنقدي، والتجميد صادر من النقدي ووارد للمحفظة.</div>
+            </div>
+        </div>
+    }
 
     @if (!isGeneral)
     {
@@ -135,22 +181,55 @@
                                 {
                                     <span class="badge bg-info text-dark">تحويل</span>
                                 }
+                                @if (entry.TransactionId.HasValue)
+                                {
+                                    <a href="/Transactions/Details/@entry.TransactionId" class="badge bg-success-subtle text-success border border-success-subtle ms-1 text-decoration-none" title="عرض تفاصيل التحصيل">
+                                        <i class="fas fa-receipt me-1"></i>تحصيل
+                                    </a>
+                                }
+                                @if (entry.IsFridgeLinked)
+                                {
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle ms-1" title="حركة تلقائية من التلاجة">
+                                        <i class="fas fa-snowflake me-1"></i>التلاجة
+                                    </span>
+                                }
+                                @if (entry.IsExpenseLinked)
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle ms-1" title="حركة تلقائية من المصروفات">
+                                        <i class="fas fa-money-bill-transfer me-1"></i>مصروف
+                                    </span>
+                                }
                             </td>
                             <td>@entry.Incoming.ToString("#,##0.####")</td>
                             <td>@entry.Outgoing.ToString("#,##0.####")</td>
                             <td class="fw-bold @(entry.Balance < 0 ? "text-danger" : "")">@entry.Balance.ToString("#,##0.####")</td>
                             <td>
                                 <div class="d-flex gap-1">
-                                    <a asp-action="EditEntry" asp-route-account="@Model.Account" asp-route-id="@entry.Id"
-                                       class="btn btn-sm btn-outline-warning" title="تعديل الحركة">
-                                        <i class="fas fa-pen"></i>
-                                    </a>
-                                    <form asp-action="DeleteEntry" asp-route-account="@Model.Account" asp-route-id="@entry.Id"
-                                          method="post" data-confirm="هل أنت متأكد من حذف هذه الحركة؟ سيتم حذف طرفي التحويل معًا إن كانت تحويلًا.">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف الحركة">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    @if (entry.IsFridgeLinked)
+                                    {
+                                        <span class="text-muted small"><i class="fas fa-lock me-1"></i>من التلاجة</span>
+                                    }
+                                    else if (entry.IsExpenseLinked)
+                                    {
+                                        <span class="text-muted small"><i class="fas fa-lock me-1"></i>من المصروفات</span>
+                                    }
+                                    else if (!entry.TransactionId.HasValue)
+                                    {
+                                        <a asp-action="EditEntry" asp-route-account="@Model.Account" asp-route-id="@entry.Id"
+                                           class="btn btn-sm btn-outline-warning" title="تعديل الحركة">
+                                            <i class="fas fa-pen"></i>
+                                        </a>
+                                        <form asp-action="DeleteEntry" asp-route-account="@Model.Account" asp-route-id="@entry.Id"
+                                              method="post" data-confirm="هل أنت متأكد من حذف هذه الحركة؟ سيتم حذف طرفي التحويل معًا إن كانت تحويلًا.">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف الحركة">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small"><i class="fas fa-lock me-1"></i>مربوطة بتحصيل</span>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -159,4 +238,5 @@
             </tbody>
         </table>
     </div>
+
 </div>

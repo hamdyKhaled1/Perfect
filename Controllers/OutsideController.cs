@@ -15,26 +15,13 @@ namespace HagImamAccounts.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(string? searchTerm, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Index(string? searchTerm, int pageSize = 10)
         {
-            page = Math.Max(page, 1);
             pageSize = pageSize is 10 or 25 or 50 ? pageSize : 10;
-            var customersQuery = _context.OutsideCustomers.AsNoTracking();
-
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                customersQuery = customersQuery.Where(customer =>
-                    customer.Name.Contains(searchTerm) ||
-                    (customer.Phone != null && customer.Phone.Contains(searchTerm)));
-            }
-
-            var totalCount = await customersQuery.CountAsync();
-            page = totalCount == 0 ? 1 : Math.Min(page, (int)Math.Ceiling(totalCount / (double)pageSize));
-            var customers = await customersQuery
+            var customers = await _context.OutsideCustomers
+                .AsNoTracking()
                 .OrderBy(customer => customer.Name)
                 .ThenBy(customer => customer.Id)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
                 .Select(customer => new OutsideCustomerListItemViewModel
                 {
                     Id = customer.Id,
@@ -49,13 +36,43 @@ namespace HagImamAccounts.Controllers
                 })
                 .ToListAsync();
 
+            var collectionCutoff = DateTime.Today.AddDays(-3);
+            var collectionWarnings = (await _context.OutsideCustomers
+                .AsNoTracking()
+                .Where(customer =>
+                    (customer.Entries.Sum(entry => (decimal?)(entry.Taken - entry.Incoming)) ?? 0) > 0)
+                .Select(customer => new OutsideCustomerCollectionWarningViewModel
+                {
+                    CustomerId = customer.Id,
+                    Name = customer.Name,
+                    LastCollectionDate = customer.Entries
+                        .Where(entry => entry.Incoming > 0)
+                        .Max(entry => (DateTime?)entry.Date)
+                })
+                .ToListAsync())
+                .Where(customer => !customer.LastCollectionDate.HasValue ||
+                     customer.LastCollectionDate.Value.Date <= collectionCutoff)
+                .Select(customer => new OutsideCustomerCollectionWarningViewModel
+                {
+                    CustomerId = customer.CustomerId,
+                    Name = customer.Name,
+                    LastCollectionDate = customer.LastCollectionDate,
+                    DaysSinceCollection = customer.LastCollectionDate.HasValue
+                        ? (DateTime.Today - customer.LastCollectionDate.Value.Date).Days
+                        : null
+                })
+                .OrderByDescending(customer => customer.DaysSinceCollection ?? int.MaxValue)
+                .ThenBy(customer => customer.Name)
+                .ToList();
+
             return View(new OutsideCustomersViewModel
             {
                 SearchTerm = searchTerm,
-                Page = page,
+                Page = 1,
                 PageSize = pageSize,
-                TotalCount = totalCount,
-                Customers = customers
+                TotalCount = customers.Count,
+                Customers = customers,
+                CollectionWarnings = collectionWarnings
             });
         }
 
@@ -112,7 +129,7 @@ namespace HagImamAccounts.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id, string? searchTerm, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Delete(int id, string? searchTerm, int pageSize = 10)
         {
             var customer = await _context.OutsideCustomers
                 .FirstOrDefaultAsync(item => item.Id == id);
@@ -123,7 +140,7 @@ namespace HagImamAccounts.Controllers
             await _context.SaveChangesAsync();
             TempData["Success"] = "تم حذف عميل الخارج وحركاته.";
 
-            return RedirectToAction(nameof(Index), new { searchTerm, page, pageSize });
+            return RedirectToAction(nameof(Index), new { searchTerm, pageSize });
         }
 
         [HttpPost]
@@ -295,6 +312,7 @@ namespace HagImamAccounts.Controllers
             }
 
             page.RemainingBalance = balance;
+            page.Entries.Reverse();
             return page;
         }
     }

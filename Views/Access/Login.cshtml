@@ -1,0 +1,367 @@
+@model HagImamAccounts.ViewModels.LoginViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "تسجيل الدخول";
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#102a24" />
+    <title>@ViewData["Title"] - Perfect | بيرفكت</title>
+    <link rel="icon" type="image/jpeg" href="~/images/perfect-logo.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: "Cairo", Tahoma, sans-serif;
+            background: #f3f6f4;
+            color: #17231f;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            padding: 32px;
+            background:
+                radial-gradient(ellipse at 12% 18%, rgba(32, 132, 91, .10), transparent 34%),
+                radial-gradient(ellipse at 90% 86%, rgba(198, 155, 74, .11), transparent 31%),
+                #f3f6f4;
+        }
+
+        .login-shell {
+            width: min(1060px, 100%);
+            min-height: 620px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            border: 1px solid rgba(31, 57, 47, .08);
+            border-radius: 28px;
+            background: #fff;
+            box-shadow: 0 28px 80px rgba(27, 48, 39, .13);
+        }
+
+        .brand-panel {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            padding: 48px;
+            color: #fff;
+            background: linear-gradient(145deg, #173b30 0%, #102a24 62%, #0c211d 100%);
+        }
+
+        .brand-panel::before,
+        .brand-panel::after {
+            position: absolute;
+            content: "";
+            border: 1px solid rgba(255,255,255,.09);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .brand-panel::before {
+            width: 430px;
+            height: 430px;
+            inset: auto -170px -150px auto;
+            box-shadow: 0 0 0 36px rgba(255,255,255,.025), 0 0 0 72px rgba(255,255,255,.02);
+        }
+
+        .brand-panel::after {
+            width: 220px;
+            height: 220px;
+            inset: -100px auto auto -100px;
+            background: rgba(209, 172, 103, .08);
+        }
+
+        .brand-content, .brand-footer { position: relative; z-index: 1; }
+
+        .brand-mark {
+            width: 60px;
+            height: 60px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(226, 195, 133, .4);
+            border-radius: 18px;
+            color: #e2c385;
+            background: rgba(255,255,255,.07);
+        }
+
+        .brand-name { margin: 18px 0 0; font-size: 27px; font-weight: 800; letter-spacing: .2px; }
+        .brand-name span { color: #e2c385; }
+        .brand-copy { max-width: 390px; margin-top: 68px; }
+        .brand-copy h1 { margin: 0 0 16px; font-size: clamp(29px, 3.4vw, 42px); line-height: 1.55; font-weight: 800; }
+        .brand-copy p { margin: 0; color: rgba(255,255,255,.72); font-size: 15px; line-height: 2; }
+
+        .trust-note {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 30px;
+            color: rgba(255,255,255,.83);
+            font-size: 13px;
+        }
+
+        .trust-dot {
+            width: 9px;
+            height: 9px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: #79d2a2;
+            box-shadow: 0 0 0 5px rgba(121,210,162,.12);
+        }
+
+        .brand-footer { color: rgba(255,255,255,.52); font-size: 12px; }
+
+        .form-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 56px clamp(28px, 6vw, 74px);
+        }
+
+        .form-content { width: 100%; max-width: 380px; }
+        .mobile-brand { display: none; }
+        .eyebrow { margin-bottom: 10px; color: #23845b; font-size: 13px; font-weight: 700; }
+        .form-title { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.5px; }
+        .form-subtitle { margin: 8px 0 30px; color: #77827d; font-size: 14px; }
+
+        .validation {
+            margin-bottom: 20px;
+            padding: 12px 14px;
+            border: 1px solid #f3cccc;
+            border-radius: 11px;
+            color: #a93636;
+            background: #fff7f7;
+            font-size: 13px;
+        }
+
+        .validation:empty { display: none; }
+        .validation ul { margin: 0; padding-right: 20px; }
+        .field { margin-bottom: 19px; }
+        .field-label { display: block; margin-bottom: 8px; color: #303d37; font-size: 13px; font-weight: 700; }
+
+        .input-wrap { position: relative; }
+
+        .input-wrap svg {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            width: 19px;
+            height: 19px;
+            color: #93a099;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .text-input {
+            width: 100%;
+            height: 52px;
+            padding: 0 46px 0 15px;
+            border: 1px solid #dfe6e2;
+            border-radius: 12px;
+            outline: 0;
+            color: #1d2924;
+            background: #fbfcfb;
+            font: inherit;
+            font-size: 14px;
+            transition: border-color .2s, box-shadow .2s, background .2s;
+        }
+
+        .text-input::placeholder { color: #a6b0aa; }
+        .text-input:focus { border-color: #26855d; background: #fff; box-shadow: 0 0 0 4px rgba(38,133,93,.12); }
+        .password-input { padding-left: 52px; }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            left: 9px;
+            display: grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            border: 0;
+            border-radius: 9px;
+            color: #76847d;
+            background: transparent;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+        .toggle-password:hover { color: #1e7652; background: #eef6f1; }
+        .toggle-password svg { position: static; transform: none; }
+        .field-error { display: block; margin-top: 5px; color: #b93636; font-size: 12px; }
+
+        .remember-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 2px 0 25px;
+        }
+
+        .remember-label { display: inline-flex; align-items: center; gap: 10px; color: #435149; font-size: 13px; cursor: pointer; }
+
+        .remember-check {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            accent-color: #218257;
+            cursor: pointer;
+        }
+
+        .remember-hint { color: #929d96; font-size: 11px; }
+
+        .submit-button {
+            width: 100%;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 0;
+            border-radius: 12px;
+            color: white;
+            background: linear-gradient(100deg, #218257, #176b48);
+            box-shadow: 0 8px 18px rgba(33,130,87,.2);
+            font: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .18s, box-shadow .18s, filter .18s;
+        }
+
+        .submit-button:hover { transform: translateY(-1px); box-shadow: 0 11px 22px rgba(33,130,87,.27); filter: brightness(1.04); }
+        .submit-button:focus-visible, .toggle-password:focus-visible { outline: 3px solid rgba(38,133,93,.32); outline-offset: 3px; }
+        .secure-note { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 23px; color: #89958e; font-size: 11px; }
+
+        @@media (max-width: 760px) {
+            body { padding: 16px; }
+            .login-shell { width: min(480px, 100%); min-height: auto; grid-template-columns: 1fr; border-radius: 22px; }
+            .brand-panel { display: none; }
+            .form-panel { padding: 34px 25px; }
+            .mobile-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+            .mobile-brand .brand-mark { width: 46px; height: 46px; border-radius: 14px; color: #218257; border-color: #dce9e1; background: #eff7f2; }
+            .mobile-brand-name { color: #18372a; font-size: 18px; font-weight: 800; }
+            .mobile-brand-name span { color: #b28a45; }
+            .form-title { font-size: 27px; }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body>
+    <main class="login-shell">
+        <aside class="brand-panel">
+            <div class="brand-content">
+                <div class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="31" height="31" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9.5 12 4l9 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z" />
+                        <path d="M8 20v-7h8v7M7 9h.01M12 9h.01M17 9h.01" />
+                    </svg>
+                </div>
+                <div class="brand-name">Perfect <span>| بيرفكت</span></div>
+                <div class="brand-copy">
+                    <h1>إدارة أعمالك<br />بكل سهولة وثقة</h1>
+                    <p>منصة واحدة لمتابعة حساباتك، الخزن، العملاء، والمصروفات بأمان ووضوح.</p>
+                    <div class="trust-note"><span class="trust-dot"></span> دخول آمن ومخصص لحسابك</div>
+                </div>
+            </div>
+            <div class="brand-footer">Perfect | بيرفكت · @DateTime.Now.Year</div>
+        </aside>
+
+        <section class="form-panel">
+            <div class="form-content">
+                <div class="mobile-brand">
+                    <div class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9.5 12 4l9 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z" />
+                            <path d="M8 20v-7h8v7M7 9h.01M12 9h.01M17 9h.01" />
+                        </svg>
+                    </div>
+                    <div class="mobile-brand-name">Perfect <span>| بيرفكت</span></div>
+                </div>
+
+                <div class="eyebrow">مرحبًا بعودتك</div>
+                <h1 class="form-title">تسجيل الدخول</h1>
+                <p class="form-subtitle">أدخل بيانات حسابك للوصول إلى لوحة التحكم.</p>
+
+                <form asp-action="Login" method="post">
+                    <input asp-for="ReturnUrl" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="validation" role="alert"></div>
+
+                    <div class="field">
+                        <label asp-for="UserName" class="field-label">اسم المستخدم</label>
+                        <div class="input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="8" r="4" /><path d="M5 21a7 7 0 0 1 14 0" />
+                            </svg>
+                            <input asp-for="UserName" class="text-input" placeholder="اكتب اسم المستخدم" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus />
+                        </div>
+                        <span asp-validation-for="UserName" class="field-error"></span>
+                    </div>
+
+                    <div class="field">
+                        <label asp-for="Password" class="field-label">كلمة المرور</label>
+                        <div class="input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3" />
+                            </svg>
+                            <input asp-for="Password" id="loginPassword" class="text-input password-input" placeholder="اكتب كلمة المرور" autocomplete="current-password" />
+                            <button type="button" class="toggle-password" id="togglePassword" aria-label="إظهار كلمة المرور" aria-pressed="false">
+                                <svg id="passwordEye" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="field-error"></span>
+                    </div>
+
+                    <div class="remember-row">
+                        <label asp-for="RememberMe" class="remember-label">
+                            <input asp-for="RememberMe" class="remember-check" />
+                            <span>تذكرني</span>
+                        </label>
+                        <span class="remember-hint">على هذا الجهاز لمدة 30 يومًا</span>
+                    </div>
+
+                    <button type="submit" class="submit-button">
+                        <span>دخول إلى حسابي</span>
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="secure-note">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 1 1 8 0v3" />
+                    </svg>
+                    بيانات دخولك محمية ومشفّرة
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const passwordInput = document.getElementById("loginPassword");
+        const togglePassword = document.getElementById("togglePassword");
+        togglePassword.addEventListener("click", () => {
+            const isVisible = passwordInput.type === "text";
+            passwordInput.type = isVisible ? "password" : "text";
+            togglePassword.setAttribute("aria-pressed", String(!isVisible));
+            togglePassword.setAttribute("aria-label", isVisible ? "إظهار كلمة المرور" : "إخفاء كلمة المرور");
+        });
+    </script>
+</body>
+</html>

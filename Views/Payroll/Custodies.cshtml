@@ -1,0 +1,74 @@
+@model HagImamAccounts.ViewModels.EmployeeCustodiesViewModel
+@{
+    ViewData["Title"] = "عهد الموظفين";
+}
+
+<div class="fade-in">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="fas fa-wallet me-2 text-success"></i>عهد الموظفين</h3>
+            <div class="text-muted">العهد المصروفة من خزنة أبو مازن النقدي أو فودافون كاش وحركات الصرف منها.</div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Index" class="btn btn-outline-dark"><i class="fas fa-money-check-dollar me-1"></i> المرتبات</a>
+            <a asp-action="CreateCustody" class="btn btn-success"><i class="fas fa-plus me-1"></i> عهدة جديدة</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card card-dashboard border-primary h-100">
+                <div class="card-body"><div class="text-muted">إجمالي العهد</div><div class="fs-3 fw-bold">@Model.TotalIssued.ToString("#,##0.####")</div></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-dashboard border-danger h-100">
+                <div class="card-body"><div class="text-muted">إجمالي الحركات</div><div class="fs-3 fw-bold text-danger">@Model.TotalSpent.ToString("#,##0.####")</div></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-dashboard border-success h-100">
+                <div class="card-body"><div class="text-muted">المتبقي في العهد</div><div class="fs-3 fw-bold text-success">@Model.TotalRemaining.ToString("#,##0.####")</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr><th>#</th><th>الموظف</th><th>تاريخ العهدة</th><th>البيان</th><th>مصدر العهدة</th><th>المبلغ</th><th>المصروف</th><th>المتبقي</th><th>الإجراءات</th></tr>
+            </thead>
+            <tbody>
+                @if (Model.Custodies.Count == 0)
+                {
+                    <tr><td colspan="9" class="text-center text-muted py-4">لا توجد عهد مسجلة.</td></tr>
+                }
+                else
+                {
+                    @for (var index = 0; index < Model.Custodies.Count; index++)
+                    {
+                        var custody = Model.Custodies[index];
+                        var spent = custody.Movements.Sum(movement => movement.Amount);
+                        <tr>
+                            <td>@(index + 1)</td>
+                            <td class="fw-bold">@(custody.Employee?.Name ?? "موظف محذوف")</td>
+                            <td class="text-nowrap">@custody.Date.ToString("dd/MM/yyyy")</td>
+                            <td>@custody.Statement</td>
+                            <td>@HagImamAccounts.Models.TreasuryEntry.GetAccountName(custody.TreasuryAccount)</td>
+                            <td>@custody.Amount.ToString("#,##0.####")</td>
+                            <td class="text-danger">@spent.ToString("#,##0.####")</td>
+                            <td class="fw-bold text-success">@((custody.Amount - spent).ToString("#,##0.####"))</td>
+                            <td class="text-nowrap">
+                                <a asp-action="CustodyDetails" asp-route-id="@custody.Id" class="btn btn-sm btn-outline-success"><i class="fas fa-list me-1"></i> التفاصيل</a>
+                                <a asp-action="EditCustody" asp-route-id="@custody.Id" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit me-1"></i> تعديل</a>
+                                <form asp-action="DeleteCustody" asp-route-id="@custody.Id" method="post" class="d-inline" onsubmit="return confirm('هل تريد حذف هذه العهدة؟ لا يمكن حذفها إذا كان عليها حركات صرف مسجلة.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i> حذف</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

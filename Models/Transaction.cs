@@ -31,12 +31,18 @@ namespace HagImamAccounts.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal CashCollection { get; set; }
 
+        [Display(Name = "خزنة التحصيل النقدي")]
+        public TreasuryAccount? CashTreasuryAccount { get; set; }
+
         /// <summary>
         /// تحصيل إلكتروني
         /// </summary>
         [Display(Name = "تحصيل إلكتروني")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal ElectronicCollection { get; set; }
+
+        [Display(Name = "محفظة التحصيل الإلكتروني")]
+        public TreasuryAccount? ElectronicTreasuryAccount { get; set; }
 
         [Display(Name = "الإضافة")]
         [Column(TypeName = "decimal(18,2)")]
@@ -179,5 +185,7 @@ namespace HagImamAccounts.Models
 
         [ForeignKey(nameof(FarmMealBatchId))]
         public virtual FarmMealBatch? FarmMealBatch { get; set; }
+
+        public virtual ICollection<TreasuryEntry> TreasuryEntries { get; set; } = new List<TreasuryEntry>();
     }
 }

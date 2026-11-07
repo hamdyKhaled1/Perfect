@@ -1,0 +1,108 @@
+@model HagImamAccounts.ViewModels.EmployeeCustodyDetailsViewModel
+@{
+    ViewData["Title"] = $"عهدة {Model.Custody.Employee?.Name}";
+}
+
+<div class="fade-in">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="fas fa-wallet me-2 text-success"></i>عهدة @Model.Custody.Employee?.Name</h3>
+            <div class="text-muted">@Model.Custody.Statement · @Model.Custody.Date.ToString("dd/MM/yyyy") · @HagImamAccounts.Models.TreasuryEntry.GetAccountName(Model.Custody.TreasuryAccount)</div>
+        </div>
+        <a asp-action="Custodies" class="btn btn-outline-dark"><i class="fas fa-arrow-right me-1"></i> رجوع للعهد</a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card card-dashboard border-primary h-100">
+                <div class="card-body"><div class="text-muted">مبلغ العهدة</div><div class="fs-3 fw-bold">@Model.Custody.Amount.ToString("#,##0.####")</div></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-dashboard border-danger h-100">
+                <div class="card-body"><div class="text-muted">إجمالي الحركات</div><div class="fs-3 fw-bold text-danger">@Model.Spent.ToString("#,##0.####")</div></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-dashboard border-success h-100">
+                <div class="card-body"><div class="text-muted">المتبقي</div><div class="fs-3 fw-bold text-success">@Model.Remaining.ToString("#,##0.####")</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">تسجيل حركة على العهدة</h5>
+            <form asp-action="AddCustodyMovement" method="post">
+                <input asp-for="NewMovement.EmployeeCustodyId" type="hidden" />
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label asp-for="NewMovement.Statement" class="form-label">البيان</label>
+                        <input asp-for="NewMovement.Statement" class="form-control" maxlength="500" />
+                        <span asp-validation-for="NewMovement.Statement" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="NewMovement.Amount" class="form-label">المبلغ المصروف</label>
+                        <input asp-for="NewMovement.Amount" type="number" min="0.0001" step="0.0001" max="@Model.Remaining" class="form-control" />
+                        <span asp-validation-for="NewMovement.Amount" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="NewMovement.Date" class="form-label">التاريخ</label>
+                        <input asp-for="NewMovement.Date" type="date" class="form-control" value="@Model.NewMovement.Date.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="NewMovement.Date" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100"><i class="fas fa-plus me-1"></i> تسجيل</button>
+                    </div>
+                </div>
+                <div class="text-muted small mt-2">المبلغ يُخصم من المتبقي في العهدة، ولا يمكن أن يتجاوز الرصيد المتاح.</div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr><th>#</th><th>التاريخ</th><th>البيان</th><th>المبلغ</th><th>المتبقي بعد الحركة</th><th>الإجراءات</th></tr>
+            </thead>
+            <tbody>
+                @if (Model.Custody.Movements.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">لا توجد حركات على العهدة بعد.</td></tr>
+                }
+                else
+                {
+                    var remaining = Model.Remaining;
+                    @for (var index = 0; index < Model.Custody.Movements.Count; index++)
+                    {
+                        var movement = Model.Custody.Movements.ElementAt(index);
+                        var editFormId = $"editMovement{movement.Id}";
+                        <tr>
+                            <td>@(index + 1)</td>
+                            <td>
+                                    <input form="@editFormId" type="hidden" name="Movement.Id" value="@movement.Id" />
+                                    <input form="@editFormId" type="hidden" name="Movement.EmployeeCustodyId" value="@Model.Custody.Id" />
+                                    <input form="@editFormId" type="date" name="Movement.Date" value="@movement.Date.ToString("yyyy-MM-dd")" class="form-control form-control-sm" required />
+                            </td>
+                            <td><input form="@editFormId" type="text" name="Movement.Statement" value="@movement.Statement" maxlength="500" class="form-control form-control-sm" required /></td>
+                            <td><input form="@editFormId" type="number" name="Movement.Amount" value="@movement.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture)" min="0.0001" step="0.0001" class="form-control form-control-sm" required /></td>
+                            <td class="text-success fw-bold">@remaining.ToString("#,##0.####")</td>
+                            <td class="text-nowrap">
+                                <form id="@editFormId" asp-action="EditCustodyMovement" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fas fa-save me-1"></i> حفظ التعديل</button>
+                                </form>
+                                <form asp-action="DeleteCustodyMovement" method="post" class="d-inline" onsubmit="return confirm('هل تريد حذف هذه الحركة وإعادة مبلغها إلى العهدة؟');">
+                                    <input type="hidden" name="id" value="@movement.Id" />
+                                    <input type="hidden" name="custodyId" value="@Model.Custody.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i> حذف</button>
+                                </form>
+                            </td>
+                        </tr>
+                        remaining += movement.Amount;
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

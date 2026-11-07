@@ -1,0 +1,212 @@
+@model PayrollAdvancesViewModel
+@{
+    ViewData["Title"] = "السلف";
+    var selectedEmployeeName = Model.EmployeeId.HasValue
+        ? Model.Employees.FirstOrDefault(employee => employee.Id == Model.EmployeeId.Value)?.Name
+        : null;
+}
+
+<div class="fade-in">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="fas fa-hand-holding-dollar me-2 text-success"></i>سلف الموظفين
+            </h3>
+            <div class="text-muted">
+                @if (!string.IsNullOrWhiteSpace(selectedEmployeeName))
+                {
+                    <span>سلف الموظف: <strong>@selectedEmployeeName</strong></span>
+                }
+                else
+                {
+                    <span>كل السلف المسجلة، وتُخصم من مرتب الشهر عند ربطها به.</span>
+                }
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Index" class="btn btn-outline-dark">
+                <i class="fas fa-money-check-dollar me-1"></i> المرتبات
+            </a>
+            <a asp-action="Employees" class="btn btn-outline-dark">
+                <i class="fas fa-users me-1"></i> الموظفون
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-4">
+            <div class="card card-dashboard border-warning h-100">
+                <div class="card-body">
+                    <div class="text-muted">سلف غير مخصومة</div>
+                    <div class="fs-3 fw-bold text-warning">@Model.TotalUnpaid.ToString("#,##0.####")</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <div class="card card-dashboard border-success h-100">
+                <div class="card-body">
+                    <div class="text-muted">سلف مخصومة من المرتبات</div>
+                    <div class="fs-3 fw-bold text-success">@Model.TotalDeducted.ToString("#,##0.####")</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <div class="card card-dashboard border-primary h-100">
+                <div class="card-body">
+                    <div class="text-muted">عدد السلف</div>
+                    <div class="fs-3 fw-bold">@Model.Advances.Count</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">تسجيل سلفة</h5>
+            <form asp-action="CreateAdvance" method="post">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="advanceEmployee" class="form-label">الموظف</label>
+                        <select id="advanceEmployee" name="EmployeeId" class="form-select" required>
+                            <option value="">اختر الموظف</option>
+                            @foreach (var employee in Model.Employees.Where(employee => employee.IsActive))
+                            {
+                                <option value="@employee.Id" selected="@(employee.Id == Model.EmployeeId)">
+                                    @employee.Name@(string.IsNullOrWhiteSpace(employee.JobTitle) ? "" : $" - {employee.JobTitle}")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <label for="advanceAmount" class="form-label">القيمة</label>
+                        <input id="advanceAmount" name="Amount" type="number" min="0.0001" step="0.0001" class="form-control" />
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <label for="advanceDate" class="form-label">التاريخ</label>
+                        <input id="advanceDate" name="Date" type="date" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-2">
+                        <label for="advanceNotes" class="form-label">ملاحظات</label>
+                        <input id="advanceNotes" name="Notes" class="form-control" maxlength="500" autocomplete="off" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-plus me-1"></i> تسجيل
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <form asp-action="Advances" method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="filterEmployee" class="form-label">تصفية بالموظف</label>
+                    <select id="filterEmployee" name="employeeId" class="form-select">
+                        <option value="">كل الموظفين</option>
+                        @foreach (var employee in Model.Employees)
+                        {
+                            <option value="@employee.Id" selected="@(employee.Id == Model.EmployeeId)">
+                                @employee.Name
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check mb-2">
+                        <input id="onlyUnpaid" name="onlyUnpaid" value="true" type="checkbox"
+                               class="form-check-input" checked="@Model.OnlyUnpaid" />
+                        <label for="onlyUnpaid" class="form-check-label">غير المخصومة فقط</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-outline-success w-100">
+                        <i class="fas fa-filter me-1"></i> تطبيق التصفية
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>الموظف</th>
+                    <th>التاريخ</th>
+                    <th>القيمة</th>
+                    <th>ملاحظات</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Advances.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">لا توجد سلف مسجلة.</td>
+                    </tr>
+                }
+                else
+                {
+                    @for (var index = 0; index < Model.Advances.Count; index++)
+                    {
+                        var advance = Model.Advances[index];
+                        <tr>
+                            <td>@(index + 1)</td>
+                            <td class="fw-bold text-nowrap">@(advance.Employee?.Name ?? "موظف محذوف")</td>
+                            <td class="text-nowrap">@advance.Date.ToString("dd/MM/yyyy")</td>
+                            <td class="fw-bold">@advance.Amount.ToString("#,##0.####")</td>
+                            <td class="text-muted">@(string.IsNullOrWhiteSpace(advance.Notes) ? "—" : advance.Notes)</td>
+                            <td class="text-nowrap">
+                                @if (advance.IsDeducted)
+                                {
+                                    <span class="badge bg-success">مخصومة</span>
+                                    @if (advance.PayrollEntry != null)
+                                    {
+                                        <div class="small text-muted">مرتب @advance.PayrollEntry.MonthLabel</div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">غير مخصومة</span>
+                                }
+                            </td>
+                            <td class="text-nowrap">
+                                @if (advance.IsDeducted)
+                                {
+                                    @if (advance.PayrollEntry != null)
+                                    {
+                                        <a asp-action="Entry" asp-route-employeeId="@advance.EmployeeId"
+                                           asp-route-year="@advance.PayrollEntry.Year" asp-route-month="@advance.PayrollEntry.Month"
+                                           class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-eye me-1"></i> الشهر
+                                        </a>
+                                    }
+                                }
+                                else
+                                {
+                                    <a asp-action="EditAdvance" asp-route-id="@advance.Id"
+                                       class="btn btn-sm btn-outline-warning" title="تعديل السلفة">
+                                        <i class="fas fa-edit me-1"></i> تعديل
+                                    </a>
+                                    <form asp-action="DeleteAdvance" asp-route-id="@advance.Id" method="post" class="d-inline"
+                                          data-confirm="هل تريد حذف سلفة @advance.Amount.ToString("#,##0.####") للموظف @(advance.Employee?.Name)؟">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف السلفة">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

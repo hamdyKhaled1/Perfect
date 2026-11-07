@@ -1,0 +1,241 @@
+@model PayrollEntryFormViewModel
+@{
+    ViewData["Title"] = "مرتب " + Model.EmployeeName;
+    var isNew = Model.Id == null;
+}
+
+<div class="fade-in">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="fas fa-file-invoice-dollar me-2 text-success"></i>
+                @(isNew ? "تسجيل مرتب" : "مرتب") @Model.EmployeeName
+            </h3>
+            <div class="text-muted">شهر @Model.MonthLabel — الراتب الحالي للموظف @Model.EmployeeMonthlySalary.ToString("#,##0.####")</div>
+        </div>
+        <a asp-action="Index" asp-route-year="@Model.Year" asp-route-month="@Model.Month" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع للشهر
+        </a>
+    </div>
+
+    @if (Model.IsPaid)
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-circle-info me-1"></i>
+            هذا المرتب مصروف@(Model.PaidDate.HasValue ? $" بتاريخ {Model.PaidDate.Value:dd/MM/yyyy}" : "").
+            تراجع عن الصرف من صفحة الشهر أولًا إذا أردت تعديله.
+        </div>
+    }
+
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+    <form asp-action="SaveEntry" method="post" data-payroll-form>
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="EmployeeId" />
+        <input type="hidden" asp-for="Year" />
+        <input type="hidden" asp-for="Month" />
+
+        <div class="form-section mb-4">
+            <h5 class="fw-bold mb-3">بيانات المرتب</h5>
+            <div class="row g-3">
+                <div class="col-sm-6 col-lg-3">
+                    <label asp-for="BaseSalary" class="form-label"></label>
+                    <input asp-for="BaseSalary" type="number" min="0" step="0.0001" class="form-control"
+                           data-payroll-base />
+                    <span asp-validation-for="BaseSalary" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <label asp-for="AbsenceDays" class="form-label"></label>
+                    <input asp-for="AbsenceDays" type="number" min="0" max="31" step="1" class="form-control"
+                           data-payroll-absence-days />
+                    <span asp-validation-for="AbsenceDays" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <label asp-for="DailyRate" class="form-label"></label>
+                    <input asp-for="DailyRate" type="number" min="0" step="0.0001" class="form-control"
+                           data-payroll-daily-rate />
+                    <span asp-validation-for="DailyRate" class="text-danger small"></span>
+                    <div class="form-text">الافتراضي = الراتب الأساسي ÷ 30</div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <label asp-for="OtherDeductions" class="form-label"></label>
+                    <input asp-for="OtherDeductions" type="number" min="0" step="0.0001" class="form-control"
+                           data-payroll-other-deductions />
+                    <span asp-validation-for="OtherDeductions" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <label asp-for="Bonus" class="form-label"></label>
+                    <input asp-for="Bonus" type="number" min="0" step="0.0001" class="form-control"
+                           data-payroll-bonus />
+                    <span asp-validation-for="Bonus" class="text-danger small"></span>
+                </div>
+                <div class="col-lg-9">
+                    <label asp-for="Notes" class="form-label"></label>
+                    <input asp-for="Notes" class="form-control" maxlength="1000" />
+                    <span asp-validation-for="Notes" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h5 class="fw-bold mb-0">
+                    <i class="fas fa-hand-holding-dollar me-1 text-success"></i>السلف المخصومة من الشهر
+                </h5>
+                <a asp-action="CreateAdvance" asp-route-employeeId="@Model.EmployeeId" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-plus me-1"></i> سلفة جديدة
+                </a>
+            </div>
+
+            @if (Model.Advances.Count == 0)
+            {
+                <div class="text-muted">لا توجد سلف غير مخصومة لهذا الموظف حتى نهاية الشهر.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 60px;">خصم</th>
+                                <th>التاريخ</th>
+                                <th>القيمة</th>
+                                <th>ملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var advance in Model.Advances)
+                            {
+                                <tr>
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input" name="SelectedAdvanceIds"
+                                               value="@advance.Id" data-payroll-advance
+                                               data-amount="@advance.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                               checked="@advance.IsSelected" />
+                                    </td>
+                                    <td class="text-nowrap">@advance.Date.ToString("dd/MM/yyyy")</td>
+                                    <td class="fw-bold">@advance.Amount.ToString("#,##0.####")</td>
+                                    <td class="text-muted">@(string.IsNullOrWhiteSpace(advance.Notes) ? "—" : advance.Notes)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="form-text">اختر السلف التي تريد خصمها من مرتب هذا الشهر.</div>
+            }
+        </div>
+
+        <div class="form-section mb-4">
+            <h5 class="fw-bold mb-3">ملخص الشهر</h5>
+            <div class="row g-3">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">خصم الغياب</div>
+                        <strong data-payroll-absence-deduction>0</strong>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">السلف المختارة</div>
+                        <strong data-payroll-advances-total>0</strong>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">إجمالي الخصومات</div>
+                        <strong class="text-danger" data-payroll-total-deductions>0</strong>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">الصافي المستحق</div>
+                        <strong class="fs-4 text-success" data-payroll-net>0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-center mt-4">
+            <button type="submit" class="btn btn-success btn-lg px-5">
+                <i class="fas fa-save me-2"></i> حفظ المرتب
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const form = document.querySelector("[data-payroll-form]");
+            if (!form) return;
+
+            const baseInput = form.querySelector("[data-payroll-base]");
+            const absenceDaysInput = form.querySelector("[data-payroll-absence-days]");
+            const dailyRateInput = form.querySelector("[data-payroll-daily-rate]");
+            const otherDeductionsInput = form.querySelector("[data-payroll-other-deductions]");
+            const bonusInput = form.querySelector("[data-payroll-bonus]");
+
+            const absenceDeductionOutput = form.querySelector("[data-payroll-absence-deduction]");
+            const advancesTotalOutput = form.querySelector("[data-payroll-advances-total]");
+            const totalDeductionsOutput = form.querySelector("[data-payroll-total-deductions]");
+            const netOutput = form.querySelector("[data-payroll-net]");
+
+            const formatter = new Intl.NumberFormat("en-US", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 4
+            });
+
+            function numberValue(input) {
+                const value = parseFloat(input ? input.value : 0);
+                return Number.isFinite(value) ? value : 0;
+            }
+
+            function selectedAdvancesTotal() {
+                return Array.from(form.querySelectorAll("[data-payroll-advance]"))
+                    .filter(input => input.checked)
+                    .reduce((total, input) => total + (parseFloat(input.dataset.amount) || 0), 0);
+            }
+
+            function recalculate() {
+                const baseSalary = numberValue(baseInput);
+                const absenceDays = numberValue(absenceDaysInput);
+                const dailyRate = numberValue(dailyRateInput);
+                const otherDeductions = numberValue(otherDeductionsInput);
+                const bonus = numberValue(bonusInput);
+
+                const absenceDeduction = absenceDays * dailyRate;
+                const advancesTotal = selectedAdvancesTotal();
+                const totalDeductions = absenceDeduction + advancesTotal + otherDeductions;
+                const net = baseSalary + bonus - totalDeductions;
+
+                absenceDeductionOutput.textContent = formatter.format(absenceDeduction);
+                advancesTotalOutput.textContent = formatter.format(advancesTotal);
+                totalDeductionsOutput.textContent = formatter.format(totalDeductions);
+                netOutput.textContent = formatter.format(net);
+                netOutput.classList.toggle("text-danger", net < 0);
+                netOutput.classList.toggle("text-success", net >= 0);
+            }
+
+            // عند تغيير الراتب الأساسي ولم يتم تعديل قيمة اليوم يدويًا، تُحدَّث تلقائيًا (الراتب ÷ 30).
+            let dailyRateTouched = false;
+            dailyRateInput?.addEventListener("input", () => { dailyRateTouched = true; recalculate(); });
+
+            baseInput?.addEventListener("input", () => {
+                if (!dailyRateTouched) {
+                    dailyRateInput.value = Math.round((numberValue(baseInput) / 30) * 10000) / 10000;
+                }
+                recalculate();
+            });
+
+            [absenceDaysInput, otherDeductionsInput, bonusInput].forEach(input => {
+                input?.addEventListener("input", recalculate);
+            });
+
+            form.querySelectorAll("[data-payroll-advance]").forEach(input => {
+                input.addEventListener("change", recalculate);
+            });
+
+            recalculate();
+        })();
+    </script>
+}

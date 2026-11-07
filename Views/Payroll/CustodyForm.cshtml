@@ -1,0 +1,68 @@
+@model HagImamAccounts.ViewModels.EmployeeCustodyFormViewModel
+@{
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = isEdit ? "تعديل عهدة" : "عهدة جديدة";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0"><i class="fas fa-wallet me-2 text-success"></i>@(isEdit ? "تعديل العهدة" : "تسجيل عهدة جديدة")</h3>
+        <a asp-action="Custodies" class="btn btn-outline-dark"><i class="fas fa-arrow-right me-1"></i> رجوع للعهد</a>
+    </div>
+
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="@(isEdit ? "EditCustody" : "CreateCustody")" method="post">
+                <input asp-for="Id" type="hidden" />
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="EmployeeId" class="form-label">الموظف</label>
+                        <select asp-for="EmployeeId" class="form-select" required>
+                            <option value="">اختر الموظف</option>
+                            @foreach (var employee in Model.Employees)
+                            {
+                                <option value="@employee.Id" selected="@(employee.Id == Model.EmployeeId)">@employee.Name@(string.IsNullOrWhiteSpace(employee.JobTitle) ? "" : $" - {employee.JobTitle}")</option>
+                            }
+                        </select>
+                        <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="TreasuryAccount" class="form-label">تُصرف من خزنة</label>
+                        <select asp-for="TreasuryAccount" class="form-select">
+                            <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenCash">خزنة أبو مازن - نقدي</option>
+                            <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenVodafoneCash">فودافون كاش - أبو مازن</option>
+                        </select>
+                        <span asp-validation-for="TreasuryAccount" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Amount" class="form-label">مبلغ العهدة</label>
+                        <input asp-for="Amount" type="number" min="0.0001" step="0.0001" class="form-control" />
+                        <span asp-validation-for="Amount" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Date" class="form-label">التاريخ</label>
+                        <input asp-for="Date" type="date" class="form-control" value="@Model.Date.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="Date" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Statement" class="form-label">البيان</label>
+                        <input asp-for="Statement" class="form-control" maxlength="500" />
+                        <span asp-validation-for="Statement" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="text-muted small mt-3">
+                    @if (isEdit)
+                    {
+                        <span>سيتم تحديث حركة الخصم في الخزنة تلقائيًا. لا يمكن أن يقل مبلغ العهدة عن مجموع حركاتها.</span>
+                    }
+                    else
+                    {
+                        <span>سيتم خصم المبلغ فورًا من الخزنة المختارة. إذا كان للموظف عهدة من الخزنة نفسها، ستُضاف إليها بدل إنشاء عهدة جديدة.</span>
+                    }
+                </div>
+                <button type="submit" class="btn btn-success mt-3"><i class="fas fa-check me-1"></i> @(isEdit ? "حفظ التعديلات" : "تسجيل العهدة")</button>
+            </form>
+        </div>
+    </div>
+</div>

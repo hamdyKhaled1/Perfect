@@ -1,6 +1,15 @@
 @model Transaction
 @{
     var isMealEntry = (ViewBag.ActiveStep as string) == "meal";
+    var isMohamedAbdelrahmanTreasuryOwner =
+        Model.CashTreasuryAccount == TreasuryAccount.MohamedAbdelrahmanCash ||
+        Model.ElectronicTreasuryAccount == TreasuryAccount.MohamedAbdelrahmanVodafoneCash ||
+        Model.ElectronicTreasuryAccount == TreasuryAccount.MohamedAbdelrahmanInstaPay;
+    var isHajjImamTreasuryOwner =
+        Model.CashTreasuryAccount == TreasuryAccount.HajjImamCash ||
+        Model.ElectronicTreasuryAccount == TreasuryAccount.HajjImamVodafoneCash ||
+        Model.ElectronicTreasuryAccount == TreasuryAccount.HajjImamInstaPay;
+    var isAbuMazenTreasuryOwner = !isMohamedAbdelrahmanTreasuryOwner && !isHajjImamTreasuryOwner;
     ViewData["Title"] = (isMealEntry ? "إضافة وجبة جديدة - " : "إضافة تحصيل جديدة - ") + ViewBag.ClientName;
 }
 
@@ -35,11 +44,85 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="OldBalance" class="form-label">
-                            <i class="fas fa-money-bill me-1"></i>فلوس عليه قديم
+                        <label asp-for="GeneralNotes" class="form-label">بيان الحركة</label>
+                        <input asp-for="GeneralNotes" class="form-control" maxlength="1000"
+                               placeholder="مثال: تحصيل نقدي أو سداد جزء من الحساب" />
+                    </div>
+
+                    <partial name="_OldBalanceField" model="Model" />
+
+                    <!-- اختيار جهة التحصيل والخزنة -->
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <label class="form-label fw-bold d-block text-dark mb-2">
+                            <i class="fas fa-vault text-success me-1"></i>تحديد الخزنة المستلمة للتحصيل:
                         </label>
-                        <input asp-for="OldBalance" type="number" step="0.01" class="form-control calc-input"
-                               id="OldBalance" asp-format="{0:0.##}" />
+                        <div class="row g-2">
+                            <div class="col-12 col-md-4">
+                                <input type="radio" class="btn-check" name="treasuryOwnerRadio" id="treasuryAbuMazen" value="AbuMazen"
+                                       @(isAbuMazenTreasuryOwner ? "checked" : "") />
+                                <label class="btn btn-outline-primary w-100 py-2 fw-bold" for="treasuryAbuMazen">
+                                    <i class="fas fa-user me-1"></i> خزنة أبو مازن
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <input type="radio" class="btn-check" name="treasuryOwnerRadio" id="treasuryHajjImam" value="HajjImam"
+                                       @(isHajjImamTreasuryOwner ? "checked" : "") />
+                                <label class="btn btn-outline-success w-100 py-2 fw-bold" for="treasuryHajjImam">
+                                    <i class="fas fa-user-tie me-1"></i> خزنة الحاج إمام
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <input type="radio" class="btn-check" name="treasuryOwnerRadio" id="treasuryMohamedAbdelrahman" value="MohamedAbdelrahman"
+                                       @(isMohamedAbdelrahmanTreasuryOwner ? "checked" : "") />
+                                <label class="btn btn-outline-dark w-100 py-2 fw-bold" for="treasuryMohamedAbdelrahman">
+                                    <i class="fas fa-user me-1"></i> خزنة محمد عبدالرحمن
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="CashCollection" class="form-label">
+                                    <i class="fas fa-hand-holding-usd me-1"></i>تحصيل نقدي
+                                </label>
+                                <input asp-for="CashCollection" type="number" step="0.01" class="form-control calc-input"
+                                       id="CashCollection" value="@(Model.CashCollection > 0 ? Model.CashCollection.ToString("0.##") : "0")" />
+                                <div class="mt-2">
+                                    <label class="form-label small text-muted mb-1">
+                                        <i class="fas fa-box-archive me-1"></i>خزنة الإيداع النقدي:
+                                    </label>
+                                    <select asp-for="CashTreasuryAccount" class="form-select form-select-sm" id="CashTreasuryAccount">
+                                        <option value="@TreasuryAccount.AbuMazenCash" data-owner="AbuMazen">خزنة أبو مازن (نقدي)</option>
+                                        <option value="@TreasuryAccount.HajjImamCash" data-owner="HajjImam">خزنة الحاج إمام (نقدي)</option>
+                                        <option value="@TreasuryAccount.MohamedAbdelrahmanCash" data-owner="MohamedAbdelrahman">خزنة محمد عبدالرحمن (نقدي)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="ElectronicCollection" class="form-label">
+                                    <i class="fas fa-credit-card me-1"></i>تحصيل إلكتروني
+                                </label>
+                                <input asp-for="ElectronicCollection" type="number" step="0.01" class="form-control calc-input"
+                                       id="ElectronicCollection" value="@(Model.ElectronicCollection > 0 ? Model.ElectronicCollection.ToString("0.##") : "0")" />
+                                <div class="mt-2" id="electronicAccountWrapper">
+                                    <label class="form-label small text-muted mb-1">
+                                        <i class="fas fa-mobile-screen-button me-1"></i>طريقة التحصيل الإلكتروني:
+                                    </label>
+                                    <select asp-for="ElectronicTreasuryAccount" class="form-select form-select-sm" id="ElectronicTreasuryAccount">
+                                        <option value="@TreasuryAccount.AbuMazenVodafoneCash" data-owner="AbuMazen">فودافون كاش - أبو مازن</option>
+                                        <option value="@TreasuryAccount.AbuMazenInstaPay" data-owner="AbuMazen">إنستا باي - أبو مازن</option>
+                                        <option value="@TreasuryAccount.HajjImamVodafoneCash" data-owner="HajjImam">فودافون كاش - الحاج إمام</option>
+                                        <option value="@TreasuryAccount.HajjImamInstaPay" data-owner="HajjImam">إنستا باي - الحاج إمام</option>
+                                        <option value="@TreasuryAccount.MohamedAbdelrahmanVodafoneCash" data-owner="MohamedAbdelrahman">فودافون كاش - محمد عبدالرحمن</option>
+                                        <option value="@TreasuryAccount.MohamedAbdelrahmanInstaPay" data-owner="MohamedAbdelrahman">إنستا باي - محمد عبدالرحمن</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="row g-3">
@@ -55,27 +138,6 @@
                                 <label asp-for="AdditionNotes" class="form-label"></label>
                                 <input asp-for="AdditionNotes" class="form-control" placeholder="سبب الإضافة" />
                                 <span id="AdditionNotesValidation" class="text-danger" style="display:none">ملاحظات الإضافة مطلوبة عند إدخال مبلغ إضافة.</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <div class="mb-3">
-                                <label asp-for="CashCollection" class="form-label">
-                                    <i class="fas fa-hand-holding-usd me-1"></i>تحصيل نقدي
-                                </label>
-                                <input asp-for="CashCollection" type="number" step="0.01" class="form-control calc-input"
-                                       id="CashCollection" value="0" />
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="mb-3">
-                                <label asp-for="ElectronicCollection" class="form-label">
-                                    <i class="fas fa-credit-card me-1"></i>تحصيل إلكتروني
-                                </label>
-                                <input asp-for="ElectronicCollection" type="number" step="0.01" class="form-control calc-input"
-                                       id="ElectronicCollection" value="0" />
                             </div>
                         </div>
                     </div>
@@ -121,6 +183,13 @@
                         رصيد الحسابات السابق: <strong>@Model.OldBalance.ToString("#,##0.####")</strong>
                     </div>
                     <input type="hidden" asp-for="OldBalance" />
+
+                    <div class="mb-3">
+                        <label asp-for="Date" class="form-label">التاريخ</label>
+                        <input asp-for="Date" type="date" class="form-control"
+                               value="@Model.Date.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="Date" class="text-danger small"></span>
+                    </div>
 
                     <div class="mb-3">
                         <label asp-for="MealType" class="form-label">نوع الوجبة</label>

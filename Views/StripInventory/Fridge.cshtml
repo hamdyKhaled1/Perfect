@@ -1,0 +1,218 @@
+@model HagImamAccounts.ViewModels.FridgePageViewModel
+@{
+    ViewData["Title"] = "التلاجة";
+    string SourceName(HagImamAccounts.Models.FridgeEntrySource source) => source switch
+    {
+        HagImamAccounts.Models.FridgeEntrySource.Manual => "يدوي",
+        HagImamAccounts.Models.FridgeEntrySource.StripSale => "بيع استربس",
+        HagImamAccounts.Models.FridgeEntrySource.StripPayment => "تحصيل استربس",
+        _ => "-"
+    };
+    string SourceBadge(HagImamAccounts.Models.FridgeEntrySource source) => source switch
+    {
+        HagImamAccounts.Models.FridgeEntrySource.Manual => "bg-secondary",
+        HagImamAccounts.Models.FridgeEntrySource.StripSale => "bg-primary",
+        HagImamAccounts.Models.FridgeEntrySource.StripPayment => "bg-success",
+        _ => "bg-secondary"
+    };
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="fas fa-snowflake me-2 text-info"></i>التلاجة
+            </h3>
+            <div class="text-muted">تحصيلات عملاء الاستربس تظهر هنا تلقائيًا، أما المبيعات فتظل في حساب العميل فقط.</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-action="Customers" class="btn btn-outline-success">
+                <i class="fas fa-users me-1"></i> عملاء الاستربس
+            </a>
+            <a asp-controller="Clients" asp-action="Index" class="btn btn-outline-dark">
+                <i class="fas fa-arrow-right me-1"></i> رجوع للعملاء
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-dashboard border-danger h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">الباقي على عملاء الاستربس</div>
+                    <div class="h4 fw-bold mb-0 @(Model.Balance > 0 ? "text-danger" : Model.Balance < 0 ? "text-success" : "")">
+                        @Model.Balance.ToString("#,##0.##") جنيه
+                    </div>
+                    <div class="text-muted small">الصادر - الوارد</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-dashboard border-primary h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">إجمالي الصادر</div>
+                    <div class="h4 fw-bold mb-0">@Model.TotalOutgoing.ToString("#,##0.##") جنيه</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-dashboard border-success h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">إجمالي الوارد</div>
+                    <div class="h4 fw-bold mb-0 text-success">@Model.TotalIncoming.ToString("#,##0.##") جنيه</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-dashboard border-info h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">عملاء الاستربس</div>
+                    <div class="h4 fw-bold mb-0">@Model.StripCustomerCount عميل</div>
+                    <div class="text-muted small">إجمالي التحصيل: @Model.StripPaidTotal.ToString("#,##0.##") جنيه</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3"><i class="fas fa-plus-circle me-2 text-success"></i>إضافة حركة للتلاجة</h5>
+            <form asp-action="AddFridgeEntry" method="post">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label asp-for="NewEntry.Date" class="form-label">التاريخ</label>
+                        <input asp-for="NewEntry.Date" type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="NewEntry.Statement" class="form-label">البيان</label>
+                        <input asp-for="NewEntry.Statement" class="form-control" maxlength="500" placeholder="مثال: وارد نقدي / صادر بضاعة" />
+                        <span asp-validation-for="NewEntry.Statement" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="NewEntry.Incoming" class="form-label">وارد</label>
+                        <input asp-for="NewEntry.Incoming" type="number" min="0" step="0.01" class="form-control" placeholder="0" />
+                        <span asp-validation-for="NewEntry.Incoming" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="NewEntry.Outgoing" class="form-label">صادر</label>
+                        <input asp-for="NewEntry.Outgoing" type="number" min="0" step="0.01" class="form-control" placeholder="0" />
+                        <span asp-validation-for="NewEntry.Outgoing" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="NewEntry.TreasuryAccount" class="form-label">خزنة التحصيل</label>
+                        <select asp-for="NewEntry.TreasuryAccount" class="form-select">
+                            <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenCash">خزنة أبو مازن - نقدي</option>
+                            <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenVodafoneCash">فودافون كاش - أبو مازن</option>
+                            <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenInstaPay">إنستا باي - أبو مازن</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-save me-1"></i> حفظ
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <div class="text-muted small mt-2">
+                <i class="fas fa-circle-info me-1"></i>
+                الوارد يُضاف إلى الخزنة المختارة. أدخل الوارد أو الصادر في الحركة الواحدة.
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="fw-bold mb-0"><i class="fas fa-list me-2"></i>حركات التلاجة</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>التاريخ</th>
+                        <th>البيان</th>
+                        <th>المصدر</th>
+                        <th>وارد</th>
+                        <th>صادر</th>
+                        <th>الرصيد</th>
+                        <th class="no-print">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Entries.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">لا توجد حركات في التلاجة بعد.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @for (var index = 0; index < Model.Entries.Count; index++)
+                        {
+                            var entry = Model.Entries[index];
+                            <tr>
+                                <td>@(index + 1)</td>
+                                <td class="text-nowrap">@entry.Date.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @entry.Statement
+                                    @if (entry.StripCustomerId.HasValue)
+                                    {
+                                        <a asp-action="CustomerProfile" asp-route-id="@entry.StripCustomerId"
+                                           class="badge bg-light text-dark border ms-1 text-decoration-none"
+                                           title="فتح حساب عميل الاستربس">
+                                            <i class="fas fa-user me-1"></i>@entry.StripCustomerName
+                                        </a>
+                                    }
+                                    @if (entry.HasTreasuryEntry)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle ms-1">
+                                            <i class="fas fa-vault me-1"></i>@entry.TreasuryAccountName
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @SourceBadge(entry.Source)">@SourceName(entry.Source)</span>
+                                </td>
+                                <td class="text-success fw-bold">@(entry.Incoming > 0 ? entry.Incoming.ToString("#,##0.##") : "-")</td>
+                                <td class="text-danger fw-bold">@(entry.Outgoing > 0 ? entry.Outgoing.ToString("#,##0.##") : "-")</td>
+                                <td class="fw-bold @(entry.Balance > 0 ? "text-danger" : entry.Balance < 0 ? "text-success" : "")">
+                                    @entry.Balance.ToString("#,##0.##")
+                                </td>
+                                <td class="no-print">
+                                    @if (entry.IsManual)
+                                    {
+                                        <div class="d-flex gap-1">
+                                            <a asp-action="EditFridgeEntry" asp-route-id="@entry.Id"
+                                               class="btn btn-sm btn-outline-warning" title="تعديل">
+                                                <i class="fas fa-pen"></i>
+                                            </a>
+                                            <form asp-action="DeleteFridgeEntry" asp-route-id="@entry.Id" method="post"
+                                                  data-confirm="هل أنت متأكد من حذف حركة التلاجة؟"
+                                                  style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small" title="حركة تلقائية من حساب عميل الاستربس">
+                                            <i class="fas fa-lock me-1"></i>تلقائي
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

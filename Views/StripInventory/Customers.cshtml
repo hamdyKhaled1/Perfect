@@ -15,6 +15,36 @@
             <a asp-action="CreateCustomer" class="btn btn-success">
                 <i class="fas fa-user-plus me-1"></i> إضافة عميل
             </a>
+            <a asp-action="Fridge" class="btn btn-info text-white">
+                <i class="fas fa-snowflake me-1"></i> التلاجة
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card card-dashboard border-primary h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">إجمالي المبيعات (كل العملاء)</div>
+                    <div class="h4 fw-bold mb-0">@Model.TotalSales.ToString("#,##0.##") جنيه</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-dashboard border-success h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">إجمالي المدفوعات</div>
+                    <div class="h4 fw-bold mb-0 text-success">@Model.TotalPaid.ToString("#,##0.##") جنيه</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-dashboard border-danger h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted">إجمالي الباقي على العملاء</div>
+                    <div class="h4 fw-bold mb-0 text-danger">@Model.TotalDue.ToString("#,##0.##") جنيه</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -50,6 +80,9 @@
                             <th>رقم التليفون</th>
                             <th>رصيد 5 كيلو</th>
                             <th>رصيد 900 جرام</th>
+                            <th>إجمالي المبيعات</th>
+                            <th>إجمالي المدفوعات</th>
+                            <th>الباقي عليه</th>
                             <th>عدد الحركات</th>
                             <th>آخر حركة</th>
                             <th>إجراءات</th>
@@ -65,13 +98,16 @@
                                 <td dir="ltr" class="text-center">@(customer.Phone ?? "-")</td>
                                 <td class="fw-bold">@customer.FiveKilogramBalance.ToString("#,##0") كرتونة</td>
                                 <td class="fw-bold">@customer.NineHundredGramBalance.ToString("#,##0") كرتونة</td>
+                                <td class="fw-bold">@customer.TotalSales.ToString("#,##0.##")</td>
+                                <td class="text-success">@customer.TotalPaid.ToString("#,##0.##")</td>
+                                <td class="fw-bold @(customer.BalanceDue > 0 ? "text-danger" : customer.BalanceDue < 0 ? "text-success" : "")">@customer.BalanceDue.ToString("#,##0.##")</td>
                                 <td><span class="badge bg-secondary">@customer.EntryCount</span></td>
                                 <td>@(customer.LastEntryDate?.ToString("yyyy/MM/dd") ?? "-")</td>
                                 <td>
                                     <div class="d-flex gap-1">
                                         <a asp-action="CustomerProfile" asp-route-id="@customer.Id"
-                                           class="btn btn-sm btn-success" title="ملف العميل">
-                                            <i class="fas fa-folder-open me-1"></i> الملف
+                                           class="btn btn-sm btn-success" title="حساب عميل الاستربس - بيع / دفع / باقي">
+                                            <i class="fas fa-file-invoice-dollar"></i>
                                         </a>
                                         <a asp-action="EditCustomer" asp-route-id="@customer.Id"
                                            class="btn btn-sm btn-warning" title="تعديل بيانات العميل">

@@ -43,20 +43,20 @@
 
                 <div class="mb-3">
                     <label class="form-label">فلوس عليه قديم</label>
-                    <div class="form-control bg-light">@Model.AccountingTransaction.OldBalance.ToString("#,##0.####")</div>
+                    <div class="form-control bg-light">@Model.OpeningBalance.ToString("#,##0.####")</div>
                 </div>
 
                 <div class="row g-3">
                     <div class="col-6">
                         <div class="mb-3">
                             <label class="form-label">الإضافة</label>
-                            <div class="form-control bg-light">@Model.AccountingTransaction.AdditionAmount.ToString("#,##0.####")</div>
+                            <div class="form-control bg-light">@Model.AdditionTotal.ToString("#,##0.####")</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="mb-3">
                             <label class="form-label">ملاحظات الإضافة</label>
-                            <div class="form-control bg-light">@(Model.AccountingTransaction.AdditionNotes ?? "-")</div>
+                            <div class="form-control bg-light">@(string.IsNullOrWhiteSpace(Model.AdditionNotes) ? "-" : Model.AdditionNotes)</div>
                         </div>
                     </div>
                 </div>
@@ -65,40 +65,40 @@
                     <div class="col-6">
                         <div class="mb-3">
                             <label class="form-label">تحصيل نقدي</label>
-                            <div class="form-control bg-light">@Model.AccountingTransaction.CashCollection.ToString("#,##0.####")</div>
+                            <div class="form-control bg-light">@Model.CashCollectionTotal.ToString("#,##0.####")</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="mb-3">
                             <label class="form-label">تحصيل إلكتروني</label>
-                            <div class="form-control bg-light">@Model.AccountingTransaction.ElectronicCollection.ToString("#,##0.####")</div>
+                            <div class="form-control bg-light">@Model.ElectronicCollectionTotal.ToString("#,##0.####")</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">الباقي بعد التحصيل</label>
-                    <div class="calculated-field-display">@Model.AccountingTransaction.RemainingAfterCollection.ToString("#,##0.####")</div>
+                    <label class="form-label">الرصيد بعد الحركة</label>
+                    <div class="calculated-field-display">@Model.EndingBalance.ToString("#,##0.####")</div>
                 </div>
 
                 <div class="row g-3">
                     <div class="col-6">
                         <div class="mb-3">
                             <label class="form-label">الخصم</label>
-                            <div class="form-control bg-light">@Model.AccountingTransaction.DiscountAmount.ToString("#,##0.####")</div>
+                            <div class="form-control bg-light">@Model.DiscountTotal.ToString("#,##0.####")</div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="mb-3">
                             <label class="form-label">ملاحظات الخصم</label>
-                            <div class="form-control bg-light">@(Model.AccountingTransaction.DiscountNotes ?? "-")</div>
+                            <div class="form-control bg-light">@(string.IsNullOrWhiteSpace(Model.DiscountNotes) ? "-" : Model.DiscountNotes)</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="mb-0">
-                    <label class="form-label fw-bold">الإجمالي</label>
-                    <div class="calculated-field-display">@Model.AccountingTransaction.SubTotal.ToString("#,##0.####")</div>
+                    <label class="form-label fw-bold">إجمالي الوجبات</label>
+                    <div class="calculated-field-display">@Model.MealTotal.ToString("#,##0.####")</div>
                 </div>
             </div>
         </div>
@@ -107,41 +107,42 @@
             <div class="form-section">
                 <h5><i class="fas fa-drumstick-bite me-2"></i>الوجبة</h5>
 
-                <div class="mb-3">
-                    <label class="form-label">القائم (الوزن الإجمالي)</label>
-                    <div class="form-control bg-light">@Model.MealTransaction.GrossWeight.ToString("#,##0.####")</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">الفارغ</label>
-                    <div class="form-control bg-light">@Model.MealTransaction.EmptyWeight.ToString("#,##0.####")</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">الصافي</label>
-                    <div class="calculated-field-display">@Model.MealTransaction.NetWeight.ToString("#,##0.####")</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">ملاحظات بعد الصافي</label>
-                    <div class="form-control bg-light" style="min-height: 58px;">@(Model.MealTransaction.GeneralNotes ?? "-")</div>
-                </div>
-
-                <hr />
-
-                <div class="mb-3">
-                    <label class="form-label">سعر الكيلو</label>
-                    <div class="form-control bg-light">@Model.MealTransaction.PricePerKilo.ToString("#,##0.####")</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">إجمالي الوجبة (الصافي × سعر الكيلو)</label>
-                    <div class="meal-total-display">@Model.MealTransaction.MealTotal.ToString("#,##0.####")</div>
-                </div>
+                @foreach (var meal in Model.MealTransactions)
+                {
+                    <div class="border rounded p-3 mb-3">
+                        <h6 class="fw-bold">@(string.IsNullOrWhiteSpace(meal.MealType) ? "وجبة" : meal.MealType)</h6>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label">القائم</label>
+                                <div class="form-control bg-light">@meal.GrossWeight.ToString("#,##0.####")</div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">الفارغ</label>
+                                <div class="form-control bg-light">@meal.EmptyWeight.ToString("#,##0.####")</div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold">الصافي</label>
+                                <div class="calculated-field-display">@meal.NetWeight.ToString("#,##0.####")</div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">سعر الكيلو</label>
+                                <div class="form-control bg-light">@meal.PricePerKilo.ToString("#,##0.####")</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">ملاحظات بعد الصافي</label>
+                                <div class="form-control bg-light" style="min-height: 38px;">@(meal.GeneralNotes ?? "-")</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">إجمالي الوجبة</label>
+                                <div class="meal-total-display">@meal.MealTotal.ToString("#,##0.####")</div>
+                            </div>
+                        </div>
+                    </div>
+                }
 
                 <div class="mb-3">
                     <label class="form-label fw-bold h5">إجمالي ما عليه</label>
-                    <div class="total-due-display">@((Model.AccountingTransaction.SubTotal + Model.MealTransaction.MealTotal).ToString("#,##0.####"))</div>
+                    <div class="total-due-display">@Model.EndingBalance.ToString("#,##0.####")</div>
                 </div>
 
             </div>

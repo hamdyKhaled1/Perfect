@@ -1,6 +1,16 @@
 @model Transaction
 @{
     var isMealEntry = (ViewBag.ActiveStep as string) == "meal";
+    var farmMealBatchId = ViewBag.FarmMealBatchId as int?;
+    var isMohamedAbdelrahmanTreasuryOwner =
+        Model.CashTreasuryAccount == TreasuryAccount.MohamedAbdelrahmanCash ||
+        Model.ElectronicTreasuryAccount == TreasuryAccount.MohamedAbdelrahmanVodafoneCash ||
+        Model.ElectronicTreasuryAccount == TreasuryAccount.MohamedAbdelrahmanInstaPay;
+    var isAbuMazenTreasuryOwner =
+        Model.CashTreasuryAccount == TreasuryAccount.AbuMazenCash ||
+        Model.ElectronicTreasuryAccount == TreasuryAccount.AbuMazenVodafoneCash ||
+        Model.ElectronicTreasuryAccount == TreasuryAccount.AbuMazenInstaPay;
+    var isHajjImamTreasuryOwner = !isMohamedAbdelrahmanTreasuryOwner && !isAbuMazenTreasuryOwner;
     ViewData["Title"] = (isMealEntry ? "تعديل وجبة - " : "تعديل تحصيل - ") + ViewBag.ClientName;
 }
 
@@ -11,9 +21,18 @@
             @(isMealEntry ? "تعديل وجبة - " : "تعديل تحصيل - ")
             <span class="text-warning">@ViewBag.ClientName</span>
         </h4>
-        <a asp-controller="Clients" asp-action="Profile" asp-route-id="@Model.ClientId" class="btn btn-outline-dark">
-            <i class="fas fa-arrow-right me-1"></i> رجوع للملف
-        </a>
+        @if (farmMealBatchId.HasValue)
+        {
+            <a asp-action="FarmMealDetails" asp-route-id="@farmMealBatchId.Value" class="btn btn-outline-dark">
+                <i class="fas fa-arrow-right me-1"></i> رجوع للتوزيع
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Clients" asp-action="Profile" asp-route-id="@Model.ClientId" class="btn btn-outline-dark">
+                <i class="fas fa-arrow-right me-1"></i> رجوع للملف
+            </a>
+        }
     </div>
 
     <form asp-action="Edit" method="post" data-transaction-form data-active-step="@ViewBag.ActiveStep">
@@ -21,6 +40,10 @@
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="ClientId" />
         <input type="hidden" name="formSection" value="@(ViewBag.ActiveStep ?? "accounts")" />
+        <input type="hidden" name="returnPage" value="@ViewBag.ReturnPage" />
+        <input type="hidden" name="returnPageSize" value="@ViewBag.ReturnPageSize" />
+        <input type="hidden" name="returnFromDate" value="@(((DateTime?)ViewBag.ReturnFromDate)?.ToString("yyyy-MM-dd"))" />
+        <input type="hidden" name="returnToDate" value="@(((DateTime?)ViewBag.ReturnToDate)?.ToString("yyyy-MM-dd"))" />
 
         <div class="row g-4">
             @if ((ViewBag.ActiveStep as string) != "meal")
@@ -35,13 +58,7 @@
                                value="@Model.Date.ToString("yyyy-MM-dd")" />
                     </div>
 
-                    <div class="mb-3">
-                        <label asp-for="OldBalance" class="form-label">
-                            <i class="fas fa-money-bill me-1"></i>فلوس عليه قديم
-                        </label>
-                        <input asp-for="OldBalance" type="number" step="0.01" class="form-control calc-input"
-                               id="OldBalance" asp-format="{0:0.##}" />
-                    </div>
+                    <partial name="_OldBalanceField" model="Model" />
 
                     <div class="row g-3">
                         <div class="col-6">
@@ -60,6 +77,36 @@
                         </div>
                     </div>
 
+                    <!-- اختيار جهة التحصيل والخزنة -->
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <label class="form-label fw-bold d-block text-dark mb-2">
+                            <i class="fas fa-vault text-success me-1"></i>تحديد الخزنة المستلمة للتحصيل:
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-12 col-md-4">
+                                <input type="radio" class="btn-check" name="treasuryOwnerRadio" id="treasuryHajjImam" value="HajjImam"
+                                       @(isHajjImamTreasuryOwner ? "checked" : "") />
+                                <label class="btn btn-outline-success w-100 py-2 fw-bold" for="treasuryHajjImam">
+                                    <i class="fas fa-user-tie me-1"></i> خزنة الحاج إمام
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <input type="radio" class="btn-check" name="treasuryOwnerRadio" id="treasuryAbuMazen" value="AbuMazen"
+                                       @(isAbuMazenTreasuryOwner ? "checked" : "") />
+                                <label class="btn btn-outline-primary w-100 py-2 fw-bold" for="treasuryAbuMazen">
+                                    <i class="fas fa-user me-1"></i> خزنة أبو مازن
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <input type="radio" class="btn-check" name="treasuryOwnerRadio" id="treasuryMohamedAbdelrahman" value="MohamedAbdelrahman"
+                                       @(isMohamedAbdelrahmanTreasuryOwner ? "checked" : "") />
+                                <label class="btn btn-outline-dark w-100 py-2 fw-bold" for="treasuryMohamedAbdelrahman">
+                                    <i class="fas fa-user me-1"></i> خزنة محمد عبدالرحمن
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row g-3">
                         <div class="col-6">
                             <div class="mb-3">
@@ -68,6 +115,16 @@
                                 </label>
                                 <input asp-for="CashCollection" type="number" step="0.01" class="form-control calc-input"
                                        id="CashCollection" />
+                                <div class="mt-2">
+                                    <label class="form-label small text-muted mb-1">
+                                        <i class="fas fa-box-archive me-1"></i>خزنة الإيداع النقدي:
+                                    </label>
+                                    <select asp-for="CashTreasuryAccount" class="form-select form-select-sm" id="CashTreasuryAccount">
+                                        <option value="@TreasuryAccount.HajjImamCash" data-owner="HajjImam">خزنة الحاج إمام (نقدي)</option>
+                                        <option value="@TreasuryAccount.AbuMazenCash" data-owner="AbuMazen">خزنة أبو مازن (نقدي)</option>
+                                        <option value="@TreasuryAccount.MohamedAbdelrahmanCash" data-owner="MohamedAbdelrahman">خزنة محمد عبدالرحمن (نقدي)</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div class="col-6">
@@ -77,6 +134,19 @@
                                 </label>
                                 <input asp-for="ElectronicCollection" type="number" step="0.01" class="form-control calc-input"
                                        id="ElectronicCollection" />
+                                <div class="mt-2" id="electronicAccountWrapper">
+                                    <label class="form-label small text-muted mb-1">
+                                        <i class="fas fa-mobile-screen-button me-1"></i>طريقة التحصيل الإلكتروني:
+                                    </label>
+                                    <select asp-for="ElectronicTreasuryAccount" class="form-select form-select-sm" id="ElectronicTreasuryAccount">
+                                        <option value="@TreasuryAccount.HajjImamVodafoneCash" data-owner="HajjImam">فودافون كاش - الحاج إمام</option>
+                                        <option value="@TreasuryAccount.HajjImamInstaPay" data-owner="HajjImam">إنستا باي - الحاج إمام</option>
+                                        <option value="@TreasuryAccount.AbuMazenVodafoneCash" data-owner="AbuMazen">فودافون كاش - أبو مازن</option>
+                                        <option value="@TreasuryAccount.AbuMazenInstaPay" data-owner="AbuMazen">إنستا باي - أبو مازن</option>
+                                        <option value="@TreasuryAccount.MohamedAbdelrahmanVodafoneCash" data-owner="MohamedAbdelrahman">فودافون كاش - محمد عبدالرحمن</option>
+                                        <option value="@TreasuryAccount.MohamedAbdelrahmanInstaPay" data-owner="MohamedAbdelrahman">إنستا باي - محمد عبدالرحمن</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -122,6 +192,13 @@
                         إجمالي الحسابات المرتبط: <strong>@Model.SubTotal.ToString("#,##0.####")</strong>
                     </div>
                     <input type="hidden" asp-for="OldBalance" />
+
+                    <div class="mb-3">
+                        <label asp-for="Date" class="form-label">التاريخ</label>
+                        <input asp-for="Date" type="date" class="form-control"
+                               value="@Model.Date.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="Date" class="text-danger small"></span>
+                    </div>
 
                     <div class="mb-3">
                         <label asp-for="MealType" class="form-label">نوع الوجبة</label>
@@ -213,10 +290,20 @@
             <button type="submit" class="btn btn-warning btn-lg px-5">
                 <i class="fas fa-save me-2"></i> حفظ التعديلات
             </button>
-            <a asp-controller="Clients" asp-action="Profile" asp-route-id="@Model.ClientId"
-               class="btn btn-outline-secondary btn-lg px-4">
-                <i class="fas fa-times me-1"></i> إلغاء
-            </a>
+            @if (farmMealBatchId.HasValue)
+            {
+                <a asp-action="FarmMealDetails" asp-route-id="@farmMealBatchId.Value"
+                   class="btn btn-outline-secondary btn-lg px-4">
+                    <i class="fas fa-times me-1"></i> إلغاء
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Clients" asp-action="Profile" asp-route-id="@Model.ClientId"
+                   class="btn btn-outline-secondary btn-lg px-4">
+                    <i class="fas fa-times me-1"></i> إلغاء
+                </a>
+            }
         </div>
     </form>
 </div>

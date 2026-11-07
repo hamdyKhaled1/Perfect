@@ -88,13 +88,14 @@
                     <th>إضافة</th>
                     <th>سحب</th>
                     <th>الرصيد بعد الحركة</th>
+                    <th class="no-print">إجراءات</th>
                 </tr>
             </thead>
             <tbody>
                 @if (Model.Entries.Count == 0)
                 {
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">لا توجد حركات مسجلة لهذا النوع من الكراتين.</td>
+                        <td colspan="8" class="text-center text-muted py-4">لا توجد حركات مسجلة لهذا النوع من الكراتين.</td>
                     </tr>
                 }
                 else
@@ -119,6 +120,24 @@
                             <td class="text-success">@entry.Incoming.ToString("#,##0")</td>
                             <td class="text-danger">@entry.Outgoing.ToString("#,##0")</td>
                             <td class="fw-bold">@entry.Balance.ToString("#,##0")</td>
+                            <td class="no-print">
+                                @if (!entry.CustomerId.HasValue)
+                                {
+                                    <div class="d-flex gap-1">
+                                        <a asp-action="EditEntry" asp-route-id="@entry.Id"
+                                           class="btn btn-sm btn-warning" title="تعديل الحركة">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form asp-action="DeleteEntry" asp-route-id="@entry.Id" method="post"
+                                              data-confirm="هل أنت متأكد من حذف هذه الحركة؟">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-danger" title="حذف الحركة">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            </td>
                         </tr>
                     }
                 }
@@ -130,7 +149,8 @@
                         <td colspan="4">الإجمالي</td>
                         <td>@Model.Entries.Sum(entry => entry.Incoming).ToString("#,##0")</td>
                         <td>@Model.Entries.Sum(entry => entry.Outgoing).ToString("#,##0")</td>
-                        <td>@Model.Entries[^1].Balance.ToString("#,##0")</td>
+                        <td>@Model.Entries[0].Balance.ToString("#,##0")</td>
+                        <td class="no-print"></td>
                     </tr>
                 </tfoot>
             }

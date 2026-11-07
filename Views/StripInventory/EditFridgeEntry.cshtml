@@ -1,0 +1,66 @@
+@model HagImamAccounts.ViewModels.FridgeEntryInputViewModel
+@{
+    ViewData["Title"] = "تعديل حركة التلاجة";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="fas fa-pen-to-square me-2 text-warning"></i>تعديل حركة التلاجة
+        </h3>
+        <a asp-action="Fridge" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع للتلاجة
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="EditFridgeEntry" method="post">
+                <input asp-for="Id" type="hidden" />
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label asp-for="Date" class="form-label">التاريخ</label>
+                        <input asp-for="Date" type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Statement" class="form-label">البيان</label>
+                        <input asp-for="Statement" class="form-control" maxlength="500" />
+                        <span asp-validation-for="Statement" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Incoming" class="form-label">وارد</label>
+                        <input asp-for="Incoming" type="number" min="0" step="0.01" class="form-control" placeholder="0" />
+                        <span asp-validation-for="Incoming" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Outgoing" class="form-label">صادر</label>
+                        <input asp-for="Outgoing" type="number" min="0" step="0.01" class="form-control" placeholder="0" />
+                        <span asp-validation-for="Outgoing" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="TreasuryAccount" class="form-label">خزنة التحصيل</label>
+                        <select asp-for="TreasuryAccount" class="form-select">
+                            <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenCash">خزنة أبو مازن - نقدي</option>
+                            <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenVodafoneCash">فودافون كاش - أبو مازن</option>
+                            <option value="@HagImamAccounts.Models.TreasuryAccount.AbuMazenInstaPay">إنستا باي - أبو مازن</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-save me-1"></i> حفظ
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <div class="text-muted small mt-2">
+                <i class="fas fa-circle-info me-1"></i>
+                تغيير «الوارد» أو خزنة التحصيل يحدّث الحركة المرتبطة تلقائيًا.
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -11,7 +11,10 @@ namespace HagImamAccounts.Models
         AbuMazenInstaPay,
         HajjImamVodafoneCash,
         HajjImamInstaPay,
-        General
+        General,
+        MohamedAbdelrahmanCash,
+        MohamedAbdelrahmanVodafoneCash,
+        MohamedAbdelrahmanInstaPay
     }
 
     public class TreasuryEntry
@@ -33,5 +36,25 @@ namespace HagImamAccounts.Models
         public DateTime Date { get; set; }
 
         public Guid? TransferId { get; set; }
+
+        public int? TransactionId { get; set; }
+
+        [ForeignKey(nameof(TransactionId))]
+        public virtual Transaction? Transaction { get; set; }
+
+        public static string GetAccountName(TreasuryAccount account) => account switch
+        {
+            TreasuryAccount.AbuMazenCash => "خزنة أبو مازن - نقدي",
+            TreasuryAccount.HajjImamCash => "خزنة الحاج إمام - نقدي",
+            TreasuryAccount.AbuMazenVodafoneCash => "فودافون كاش - أبو مازن",
+            TreasuryAccount.AbuMazenInstaPay => "إنستا باي - أبو مازن",
+            TreasuryAccount.HajjImamVodafoneCash => "فودافون كاش - الحاج إمام",
+            TreasuryAccount.HajjImamInstaPay => "إنستا باي - الحاج إمام",
+            TreasuryAccount.General => "الخزنة العمومية",
+            TreasuryAccount.MohamedAbdelrahmanCash => "خزنة محمد عبدالرحمن - نقدي",
+            TreasuryAccount.MohamedAbdelrahmanVodafoneCash => "فودافون كاش - محمد عبدالرحمن",
+            TreasuryAccount.MohamedAbdelrahmanInstaPay => "إنستا باي - محمد عبدالرحمن",
+            _ => account.ToString()
+        };
     }
 }

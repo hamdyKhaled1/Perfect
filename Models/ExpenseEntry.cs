@@ -19,9 +19,19 @@ namespace HagImamAccounts.Models
 
         public DateTime Date { get; set; }
 
+        public int? TreasuryEntryId { get; set; }
+
+        [ForeignKey(nameof(TreasuryEntryId))]
+        public virtual TreasuryEntry? TreasuryEntry { get; set; }
+
         public int? FarmMealBatchId { get; set; }
 
         [ForeignKey(nameof(FarmMealBatchId))]
         public virtual FarmMealBatch? FarmMealBatch { get; set; }
+
+        public int? PayrollEntryId { get; set; }
+
+        [ForeignKey(nameof(PayrollEntryId))]
+        public virtual PayrollEntry? PayrollEntry { get; set; }
     }
 }

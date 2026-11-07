@@ -136,6 +136,56 @@ main {
     white-space: nowrap;
 }
 
+/* جدول إدخال الوجبات: أرقام أكبر وأوضح */
+.bulk-meal-table thead th {
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.bulk-meal-table tbody td {
+    font-size: 1rem;
+}
+
+.bulk-meal-table .form-control-sm {
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0.45rem 0.5rem;
+    min-height: 2.6rem;
+    min-width: 4.5rem;
+    color: #212529;
+    transition: width 0.12s ease;
+}
+
+.bulk-meal-table .form-control-sm:not([data-notes]) {
+    text-align: center;
+}
+
+.bulk-meal-table [data-gross-total],
+.bulk-meal-table [data-empty-total],
+.bulk-meal-table [data-paneh-gross-total],
+.bulk-meal-table [data-paneh-empty-total],
+.bulk-meal-table [data-price-per-kilo],
+.bulk-meal-table [data-meal-total] {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.bulk-meal-table [data-net-weight] {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.bulk-meal-table tfoot td {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.bulk-meal-table [data-meal-total-breakdown],
+.bulk-meal-table [data-bulk-total-meal-breakdown] {
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
 .table-striped tbody tr:nth-of-type(odd) {
     background-color: rgba(0, 0, 0, 0.02);
 }
@@ -406,4 +456,117 @@ main {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+/* ========================================
+   Capital Strip (Total company capital)
+   ======================================== */
+.capital-strip {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.55rem 0;
+    font-weight: 600;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.capital-strip-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #1f2937;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.capital-strip-link:hover {
+    color: #198754;
+}
+
+.capital-strip-label {
+    font-size: 0.95rem;
+    color: #4b5563;
+}
+
+.capital-strip-value {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #198754;
+    font-variant-numeric: tabular-nums;
+}
+
+.capital-strip-arrow {
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
+
+.capital-strip-hint {
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+.capital-strip-delta {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #b91c1c;
+}
+
+.capital-compare-form {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.capital-compare-form .form-control {
+    width: 10rem;
+}
+
+.capital-compare-hint {
+    color: #6b7280;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.capital-strip-comparison-ok {
+    color: #198754;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.capital-strip-previous {
+    font-weight: 400;
+    opacity: 0.8;
+    margin-inline-start: 0.25rem;
+}
+
+/* Capital changed (increase or decrease) -> red */
+.capital-strip-changed {
+    background: #fef2f2;
+    border-bottom: 2px solid #dc3545;
+    animation: capitalAlertPulse 1.2s ease-in-out 2;
+}
+
+.capital-strip-changed .capital-strip-link,
+.capital-strip-changed .capital-strip-label,
+.capital-strip-changed .capital-strip-value,
+.capital-strip-changed .capital-strip-hint {
+    color: #dc3545;
+}
+
+/* Negative capital */
+.capital-strip-negative .capital-strip-value {
+    color: #dc3545;
+}
+
+@keyframes capitalAlertPulse {
+    0%, 100% { background: #fef2f2; }
+    50% { background: #fbd5d5; }
+}
+
+@media (max-width: 576px) {
+    .capital-strip-label { font-size: 0.85rem; }
+    .capital-strip-value { font-size: 1rem; }
+    .capital-strip-delta, .capital-strip-hint { font-size: 0.78rem; }
+    .capital-compare-form { flex-wrap: wrap; }
+    .capital-compare-form .form-control { width: 8rem; }
+    .capital-compare-hint { width: 100%; }
 }

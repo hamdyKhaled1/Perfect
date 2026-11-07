@@ -30,6 +30,26 @@ namespace HagImamAccounts.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal FarmPaidAmount { get; set; }
 
+        /// <summary>
+        /// إضافة على حساب المزرعة (تزيد المتبقي للمزرعة).
+        /// </summary>
+        [Display(Name = "إضافة على حساب المزرعة")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal FarmAdditionAmount { get; set; }
+
+        [StringLength(500)]
+        public string? FarmAdditionStatement { get; set; }
+
+        /// <summary>
+        /// خصم من حساب المزرعة (يقلل المتبقي للمزرعة).
+        /// </summary>
+        [Display(Name = "خصم من حساب المزرعة")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal FarmDiscountAmount { get; set; }
+
+        [StringLength(500)]
+        public string? FarmDiscountStatement { get; set; }
+
         [Column(TypeName = "decimal(18,2)")]
         public decimal PreviousFarmBalance { get; set; }
 
@@ -40,16 +60,16 @@ namespace HagImamAccounts.Models
         public decimal FarmAccount => CurrentFarmAccount;
 
         [NotMapped]
-        public decimal TotalFarmAccount => FarmAccount + PreviousFarmBalance;
+        public decimal TotalFarmAccount => FarmAccount + PreviousFarmBalance + FarmAdditionAmount - FarmDiscountAmount;
 
         [NotMapped]
         public decimal RemainingFarmAccount => TotalFarmAccount - FarmPaidAmount;
 
         [NotMapped]
-        public decimal WeightDifference => FarmWeight - NetWeight;
+        public decimal WeightDifference => NetWeight - FarmWeight;
 
         [NotMapped]
-        public decimal Profit => WeightDifference * FarmPrice + MealTotal - CurrentFarmAccount;
+        public decimal Profit => MealTotal - CurrentFarmAccount;
 
         [NotMapped]
         public decimal FinalTotal => MealTotal - CurrentFarmAccount;

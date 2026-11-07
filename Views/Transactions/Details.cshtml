@@ -44,11 +44,27 @@
                         </tr>
                         <tr>
                             <td class="fw-bold text-muted">تحصيل نقدي</td>
-                            <td>@Model.CashCollection.ToString("#,##0.####")</td>
+                            <td>
+                                @Model.CashCollection.ToString("#,##0.####")
+                                @if (Model.CashCollection > 0 && Model.CashTreasuryAccount.HasValue)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle ms-2">
+                                        <i class="fas fa-vault me-1"></i>@TreasuryEntry.GetAccountName(Model.CashTreasuryAccount.Value)
+                                    </span>
+                                }
+                            </td>
                         </tr>
                         <tr>
                             <td class="fw-bold text-muted">تحصيل إلكتروني</td>
-                            <td>@Model.ElectronicCollection.ToString("#,##0.####")</td>
+                            <td>
+                                @Model.ElectronicCollection.ToString("#,##0.####")
+                                @if (Model.ElectronicCollection > 0 && Model.ElectronicTreasuryAccount.HasValue)
+                                {
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2">
+                                        <i class="fas fa-mobile-alt me-1"></i>@TreasuryEntry.GetAccountName(Model.ElectronicTreasuryAccount.Value)
+                                    </span>
+                                }
+                            </td>
                         </tr>
                         <tr>
                             <td class="fw-bold text-muted">الإضافة</td>

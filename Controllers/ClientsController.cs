@@ -23,6 +23,26 @@ namespace HagImamAccounts.Controllers
             int page = 1,
             int pageSize = 10)
         {
+            return await ClientList("Index", searchTerm, sortBy, page, pageSize);
+        }
+
+        // GET: Clients/Details - قائمة العملاء الخاصة بصفحة تفاصيل العملاء
+        public async Task<IActionResult> Details(
+            string? searchTerm,
+            string? sortBy,
+            int page = 1,
+            int pageSize = 10)
+        {
+            return await ClientList("Details", searchTerm, sortBy, page, pageSize);
+        }
+
+        private async Task<IActionResult> ClientList(
+            string actionName,
+            string? searchTerm,
+            string? sortBy,
+            int page,
+            int pageSize)
+        {
             page = Math.Max(page, 1);
             pageSize = pageSize is 10 or 25 or 50 ? pageSize : 10;
             sortBy = sortBy is "TotalDue" or "LastTransaction" ? sortBy : "Name";
@@ -40,18 +60,37 @@ namespace HagImamAccounts.Controllers
                 Id = c.Id,
                 Name = c.Name,
                 Phone = c.Phone,
-                TotalDue = c.Transactions
-                    .Where(t => !t.IsDeleted)
-                    .Sum(t => (decimal?)(
-                        (t.GrossWeight - t.EmptyWeight) * t.PricePerKilo +
-                        t.OldBalance - t.CashCollection - t.ElectronicCollection +
-                        t.AdditionAmount - t.DiscountAmount)) ?? 0,
-                TransactionCount = c.Transactions.Count(t => !t.IsDeleted),
-                LastTransactionDate = c.Transactions
-                    .Where(t => !t.IsDeleted)
-                    .OrderByDescending(t => t.Date)
-                    .Select(t => (DateTime?)t.Date)
-                    .FirstOrDefault()
+                IsFridge = c.IsFridge,
+                TotalDue = c.IsFridge
+                    ? (c.FridgeEntries
+                        .Where(entry => entry.Source != FridgeEntrySource.StripSale)
+                        .Sum(f => (decimal?)(f.Outgoing - f.Incoming)) ?? 0)
+                    : (c.Transactions
+                        .Where(t => !t.IsDeleted)
+                        .OrderBy(t => t.Id)
+                        .Select(t => (decimal?)t.OldBalance)
+                        .FirstOrDefault() ?? 0) +
+                      (c.Transactions
+                        .Where(t => !t.IsDeleted)
+                        .Sum(t => (decimal?)(
+                            (t.GrossWeight - t.EmptyWeight) * t.PricePerKilo +
+                            t.AdditionAmount - t.CashCollection - t.ElectronicCollection -
+                            t.DiscountAmount)) ?? 0),
+                TransactionCount = c.IsFridge
+                    ? c.FridgeEntries.Count(entry => entry.Source != FridgeEntrySource.StripSale)
+                    : c.Transactions.Count(t => !t.IsDeleted),
+                LastTransactionDate = c.IsFridge
+                    ? c.FridgeEntries
+                        .Where(entry => entry.Source != FridgeEntrySource.StripSale)
+                        .OrderByDescending(f => f.Date)
+                        .ThenByDescending(f => f.Id)
+                        .Select(f => (DateTime?)f.Date)
+                        .FirstOrDefault()
+                    : c.Transactions
+                        .Where(t => !t.IsDeleted)
+                        .OrderByDescending(t => t.Date)
+                        .Select(t => (DateTime?)t.Date)
+                        .FirstOrDefault()
             });
 
             var totalCount = await clientsQuery.CountAsync();
@@ -62,19 +101,72 @@ namespace HagImamAccounts.Controllers
             var orderedQuery = sortBy switch
             {
                 "TotalDue" => clientQuery.OrderBy(c => c.TotalDue).ThenBy(c => c.Id),
-                "LastTransaction" => clientQuery.OrderBy(c => c.LastTransactionDate).ThenBy(c => c.Id),
+                "LastTransaction" => clientQuery.OrderByDescending(c => c.LastTransactionDate).ThenBy(c => c.Id),
                 _ => clientQuery.OrderBy(c => c.Name).ThenBy(c => c.Id)
             };
-            var clients = await orderedQuery
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            var clients = await orderedQuery.ToListAsync();
+            var collectionWarnings = new List<ClientCollectionWarningViewModel>();
+            if (actionName == "Index")
+            {
+                var collectionCutoff = DateTime.Today.AddDays(-3);
+                var collectionRecords = await _context.Clients
+                    .AsNoTracking()
+                    .Where(client => client.IsActive)
+                    .Select(client => new ClientCollectionWarningViewModel
+                    {
+                        ClientId = client.Id,
+                        Name = client.Name,
+                        TotalDue = client.IsFridge
+                            ? (client.FridgeEntries
+                                .Where(entry => entry.Source != FridgeEntrySource.StripSale)
+                                .Sum(entry => (decimal?)(entry.Outgoing - entry.Incoming)) ?? 0)
+                            : (client.Transactions
+                                .Where(transaction => !transaction.IsDeleted)
+                                .OrderBy(transaction => transaction.Id)
+                                .Select(transaction => (decimal?)transaction.OldBalance)
+                                .FirstOrDefault() ?? 0) +
+                              (client.Transactions
+                                .Where(transaction => !transaction.IsDeleted)
+                                .Sum(transaction => (decimal?)(
+                                    (transaction.GrossWeight - transaction.EmptyWeight) * transaction.PricePerKilo +
+                                    transaction.AdditionAmount - transaction.CashCollection -
+                                    transaction.ElectronicCollection - transaction.DiscountAmount)) ?? 0),
+                        LastCollectionDate = client.IsFridge
+                            ? client.FridgeEntries
+                                .Where(entry => entry.Source != FridgeEntrySource.StripSale && entry.Incoming > 0)
+                                .Max(entry => (DateTime?)entry.Date)
+                            : client.Transactions
+                                .Where(transaction => !transaction.IsDeleted &&
+                                    (transaction.CashCollection > 0 || transaction.ElectronicCollection > 0))
+                                .Max(transaction => (DateTime?)transaction.Date)
+                    })
+                    .ToListAsync();
+
+                collectionWarnings = collectionRecords
+                    .Where(client => client.TotalDue > 0 &&
+                        (!client.LastCollectionDate.HasValue ||
+                        client.LastCollectionDate.Value.Date <= collectionCutoff)
+                    )
+                    .Select(client => new ClientCollectionWarningViewModel
+                    {
+                        ClientId = client.ClientId,
+                        Name = client.Name,
+                        LastCollectionDate = client.LastCollectionDate,
+                        DaysSinceCollection = client.LastCollectionDate.HasValue
+                            ? (DateTime.Today - client.LastCollectionDate.Value.Date).Days
+                            : null
+                    })
+                    .OrderByDescending(client => client.DaysSinceCollection ?? int.MaxValue)
+                    .ThenBy(client => client.Name)
+                    .ToList();
+            }
 
             var viewModel = new ClientFilterViewModel
             {
                 SearchTerm = searchTerm,
                 SortBy = sortBy,
                 Clients = clients,
+                CollectionWarnings = collectionWarnings,
                 Page = page,
                 PageSize = pageSize,
                 TotalCount = totalCount,
@@ -82,7 +174,9 @@ namespace HagImamAccounts.Controllers
                 TotalTransactions = totalTransactions
             };
 
-            return View(viewModel);
+            ViewBag.ClientListAction = actionName;
+            ViewData["Title"] = actionName == "Details" ? "تفاصيل العملاء" : "العملاء";
+            return View("Index", viewModel);
         }
 
         // GET: Clients/ExportExcel - تصدير بيانات العملاء والوجبات
@@ -93,7 +187,7 @@ namespace HagImamAccounts.Controllers
                 .Where(c => c.IsActive)
                 .Include(c => c.Transactions
                     .Where(t => !t.IsDeleted)
-                    .OrderBy(t => t.Date))
+                    .OrderByDescending(t => t.Date))
                 .OrderBy(c => c.Name)
                 .ToListAsync();
 
@@ -108,7 +202,7 @@ namespace HagImamAccounts.Controllers
                 .Where(c => c.Id == id && c.IsActive)
                 .Include(c => c.Transactions
                     .Where(t => !t.IsDeleted)
-                    .OrderBy(t => t.Date))
+                    .OrderByDescending(t => t.Date))
                 .FirstOrDefaultAsync();
 
             if (client == null)
@@ -215,16 +309,27 @@ namespace HagImamAccounts.Controllers
         }
 
         // GET: Clients/Profile/5 - ملف العميل
-        public async Task<IActionResult> Profile(int? id, DateTime? fromDate, DateTime? toDate)
+        public async Task<IActionResult> Profile(
+            int? id,
+            DateTime? fromDate,
+            DateTime? toDate,
+            int page = 1,
+            int pageSize = 10)
         {
             if (id == null)
                 return NotFound();
+
+            page = Math.Max(page, 1);
+            pageSize = pageSize is 10 or 25 or 50 ? pageSize : 10;
 
             var client = await _context.Clients
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (client == null)
                 return NotFound();
+
+            if (client.IsFridge)
+                return RedirectToAction("Fridge", "StripInventory");
 
             if (fromDate.HasValue && toDate.HasValue && fromDate.Value.Date > toDate.Value.Date)
                 ModelState.AddModelError(string.Empty, "تاريخ النهاية يجب أن يكون بعد تاريخ البداية أو مساويًا له.");
@@ -241,21 +346,124 @@ namespace HagImamAccounts.Controllers
                     transactionsQuery = transactionsQuery.Where(t => t.Date < toDate.Value.Date.AddDays(1));
             }
 
+            var allClientTransactions = await _context.Transactions
+                .Where(t => t.ClientId == client.Id && !t.IsDeleted)
+                .ToListAsync();
+            var movements = BuildClientMovements(allClientTransactions);
+            if (ModelState.IsValid)
+            {
+                if (fromDate.HasValue)
+                    movements = movements.Where(movement => movement.Date >= fromDate.Value.Date).ToList();
+
+                if (toDate.HasValue)
+                    movements = movements.Where(movement => movement.Date < toDate.Value.Date.AddDays(1)).ToList();
+            }
+
+            // الأحدث أولًا في العرض، مع الحفاظ على احتساب الرصيد الجاري بترتيب تاريخي.
+            movements = movements
+                .OrderByDescending(movement => movement.Date)
+                .ThenByDescending(movement => movement.TransactionId)
+                .ToList();
+
+            var totalCount = movements.Count;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+            page = Math.Min(page, totalPages);
+            movements = movements
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             var viewModel = new ClientProfileViewModel
             {
                 Client = client,
-                Transactions = await transactionsQuery.OrderByDescending(t => t.Date).ToListAsync(),
-                OverallTotalDue = await _context.Transactions
-                    .Where(t => t.ClientId == client.Id && !t.IsDeleted)
-                    .SumAsync(t => (decimal?)(
-                        (t.GrossWeight - t.EmptyWeight) * t.PricePerKilo +
-                        t.OldBalance - t.CashCollection - t.ElectronicCollection +
-                        t.AdditionAmount - t.DiscountAmount)) ?? 0,
+                Transactions = await transactionsQuery
+                    .OrderByDescending(t => t.Date)
+                    .ThenByDescending(t => t.Id)
+                    .ToListAsync(),
+                Movements = movements,
+                OverallTotalDue = ClientBalanceCalculator.Calculate(allClientTransactions),
                 FromDate = fromDate,
-                ToDate = toDate
+                ToDate = toDate,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount
             };
 
             return View(viewModel);
+        }
+
+        private static List<ClientMovementViewModel> BuildClientMovements(
+            IEnumerable<Transaction> transactions)
+        {
+            var orderedTransactions = transactions
+                .OrderBy(transaction => transaction.Date)
+                .ThenBy(transaction => transaction.Id)
+                .ToList();
+            if (orderedTransactions.Count == 0)
+                return new List<ClientMovementViewModel>();
+
+            var remainingBalance = orderedTransactions
+                .OrderBy(transaction => transaction.Id)
+                .First()
+                .OldBalance;
+            var movements = new List<ClientMovementViewModel>();
+
+            foreach (var transaction in orderedTransactions)
+            {
+                var mealTotal = transaction.MealTotal;
+                var amountPaid = transaction.CashCollection + transaction.ElectronicCollection;
+                var amountDue = mealTotal + transaction.AdditionAmount - transaction.DiscountAmount;
+                remainingBalance += amountDue - amountPaid;
+
+                movements.Add(new ClientMovementViewModel
+                {
+                    TransactionId = transaction.Id,
+                    Date = transaction.Date,
+                    Statement = BuildMovementStatement(transaction),
+                    NetWeight = transaction.NetWeight,
+                    PricePerKilo = transaction.PricePerKilo,
+                    MealTotal = mealTotal,
+                    AmountDue = amountDue,
+                    AmountPaid = amountPaid,
+                    RemainingBalance = remainingBalance
+                });
+            }
+
+            return movements;
+        }
+
+        private static string BuildMovementStatement(Transaction transaction)
+        {
+            var statements = new List<string>();
+            var hasMeal = transaction.GrossWeight != 0 ||
+                          transaction.EmptyWeight != 0 ||
+                          transaction.FarmPrice != 0 ||
+                          transaction.ExtraField != 0 ||
+                          transaction.PricePerKilo != 0;
+            if (hasMeal)
+            {
+                var mealStatement = string.IsNullOrWhiteSpace(transaction.MealType)
+                    ? "وجبة"
+                    : $"وجبة {transaction.MealType}";
+                statements.Add(mealStatement);
+            }
+            else if (!string.IsNullOrWhiteSpace(transaction.GeneralNotes))
+            {
+                statements.Add(transaction.GeneralNotes.Trim());
+            }
+            else if (transaction.CashCollection != 0 || transaction.ElectronicCollection != 0)
+            {
+                statements.Add("تحصيل");
+            }
+
+            if (!string.IsNullOrWhiteSpace(transaction.GeneralNotes) && hasMeal)
+                statements.Add(transaction.GeneralNotes.Trim());
+            if (!string.IsNullOrWhiteSpace(transaction.AdditionNotes))
+                statements.Add($"إضافة: {transaction.AdditionNotes.Trim()}");
+            if (!string.IsNullOrWhiteSpace(transaction.DiscountNotes))
+                statements.Add($"خصم: {transaction.DiscountNotes.Trim()}");
+
+            return statements.Count == 0 ? "حركة حساب" : string.Join("، ", statements.Distinct());
         }
 
         // GET: Clients/Create
@@ -290,6 +498,12 @@ namespace HagImamAccounts.Controllers
             if (client == null)
                 return NotFound();
 
+            if (client.IsFridge)
+            {
+                TempData["Error"] = "بيانات التلاجة تُدار من صفحة التلاجة نفسها.";
+                return RedirectToAction(nameof(Index));
+            }
+
             return View(client);
         }
 
@@ -308,6 +522,12 @@ namespace HagImamAccounts.Controllers
                     var existingClient = await _context.Clients.FindAsync(id);
                     if (existingClient == null)
                         return NotFound();
+
+                    if (existingClient.IsFridge)
+                    {
+                        TempData["Error"] = "بيانات التلاجة تُدار من صفحة التلاجة نفسها.";
+                        return RedirectToAction(nameof(Index));
+                    }
 
                     existingClient.Name = client.Name;
                     existingClient.Phone = client.Phone;
@@ -336,6 +556,12 @@ namespace HagImamAccounts.Controllers
             var client = await _context.Clients.FindAsync(id);
             if (client != null)
             {
+                if (client.IsFridge)
+                {
+                    TempData["Error"] = "لا يمكن حذف التلاجة؛ فهي حساب كل عملاء الاستربس.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 client.IsActive = false; // Soft delete
                 await _context.SaveChangesAsync();
                 TempData["Success"] = $"تم حذف العميل '{client.Name}' بنجاح";

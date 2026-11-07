@@ -37,10 +37,6 @@
     <!-- Action Buttons -->
     <div class="d-flex justify-content-between align-items-center mb-3 no-print">
         <div class="d-flex gap-2">
-            <a asp-controller="Transactions" asp-action="Create" asp-route-clientId="@Model.Client.Id"
-               class="btn btn-success">
-                <i class="fas fa-plus me-1"></i> وجبة جديدة
-            </a>
             <a asp-controller="Clients" asp-action="Edit" asp-route-id="@Model.Client.Id"
                class="btn btn-warning">
                 <i class="fas fa-edit me-1"></i> تعديل البيانات
@@ -77,6 +73,8 @@
                         <th>القائم</th>
                         <th>الفارغ</th>
                         <th class="calculated-field">الصافي</th>
+                        <th class="calculated-field">البيان (الصافي × سعر المزرعة)</th>
+                        <th>التحصيل</th>
                         <th>نوع الوجبة</th>
                         <th>سعر المزرعة</th>
                         <th>الزيادة على سعر المزرعة</th>
@@ -94,8 +92,20 @@
                             <td>@(i + 1)</td>
                             <td class="text-nowrap">@t.Date.ToString("yyyy/MM/dd")</td>
                             <td>@t.OldBalance.ToString("#,##0.####")</td>
-                            <td>@t.CashCollection.ToString("#,##0.####")</td>
-                            <td>@t.ElectronicCollection.ToString("#,##0.####")</td>
+                            <td>
+                                @t.CashCollection.ToString("#,##0.####")
+                                @if (t.CashCollection > 0 && t.CashTreasuryAccount.HasValue)
+                                {
+                                    <div class="small text-success text-nowrap"><i class="fas fa-vault me-1"></i>@TreasuryEntry.GetAccountName(t.CashTreasuryAccount.Value)</div>
+                                }
+                            </td>
+                            <td>
+                                @t.ElectronicCollection.ToString("#,##0.####")
+                                @if (t.ElectronicCollection > 0 && t.ElectronicTreasuryAccount.HasValue)
+                                {
+                                    <div class="small text-primary text-nowrap"><i class="fas fa-mobile-alt me-1"></i>@TreasuryEntry.GetAccountName(t.ElectronicTreasuryAccount.Value)</div>
+                                }
+                            </td>
                             <td>@t.AdditionAmount.ToString("#,##0.####")</td>
                             <td class="small">@(t.AdditionNotes ?? "-")</td>
                             <td class="calculated-field fw-bold">@t.RemainingAfterCollection.ToString("#,##0.####")</td>
@@ -105,6 +115,8 @@
                             <td>@t.GrossWeight.ToString("#,##0.####")</td>
                             <td>@t.EmptyWeight.ToString("#,##0.####")</td>
                             <td class="calculated-field fw-bold">@t.NetWeight.ToString("#,##0.####")</td>
+                            <td class="calculated-field fw-bold">@((t.NetWeight * t.FarmPrice).ToString("#,##0.####"))</td>
+                            <td>@dailyCollection.ToString("#,##0.####")</td>
                             <td>@(string.IsNullOrWhiteSpace(t.MealType) ? "—" : t.MealType)</td>
                             <td>@t.FarmPrice.ToString("#,##0.####")</td>
                             <td>@t.ExtraField.ToString("#,##0.####")</td>
@@ -159,15 +171,6 @@
 @model ClientProfileViewModel
 @{
     ViewData["Title"] = "ملف العميل - " + Model.Client.Name;
-    var accountTransactions = Model.Transactions
-        .Where(t => (t.GrossWeight == 0 && t.EmptyWeight == 0 && t.FarmPrice == 0 && t.ExtraField == 0) ||
-                    t.CashCollection != 0 || t.ElectronicCollection != 0 ||
-                    t.AdditionAmount != 0 || t.DiscountAmount != 0)
-        .ToList();
-    var mealTransactions = Model.Transactions
-        .Where(t => t.GrossWeight != 0 || t.EmptyWeight != 0 || t.FarmPrice != 0 ||
-                    t.ExtraField != 0 || t.PricePerKilo != 0)
-        .ToList();
 }
 
 <style>
@@ -183,6 +186,17 @@
     .transaction-table .table tbody td.calculated-field {
         background-color: #f8d7da !important;
         color: #842029 !important;
+    }
+
+    .client-movements-table .meal-account-column {
+        width: 260px;
+        max-width: 260px;
+    }
+
+    .client-movements-table .movement-date-column {
+        width: 110px;
+        max-width: 110px;
+        white-space: nowrap;
     }
 </style>
 
@@ -220,10 +234,6 @@
     <!-- Action Buttons -->
     <div class="d-flex justify-content-between align-items-center mb-3 no-print">
         <div class="d-flex gap-2">
-            <a asp-controller="Transactions" asp-action="Create" asp-route-clientId="@Model.Client.Id" asp-route-section="accounts"
-               class="btn btn-success">
-                <i class="fas fa-plus me-1"></i> تحصيل جديد
-            </a>
             <a asp-controller="Clients" asp-action="Edit" asp-route-id="@Model.Client.Id"
                class="btn btn-warning">
                 <i class="fas fa-edit me-1"></i> تعديل البيانات
@@ -250,6 +260,15 @@
                 <label asp-for="ToDate" class="form-label">إلى تاريخ</label>
                 <input asp-for="ToDate" type="date" class="form-control" />
             </div>
+            <div class="col-sm-4 col-md-2">
+                <label asp-for="PageSize" class="form-label">حركات بالصفحة</label>
+                <select asp-for="PageSize" class="form-select">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+            <input type="hidden" name="page" value="1" />
             <div class="col-sm-2 d-flex gap-2">
                 <button type="submit" class="btn btn-success">
                     <i class="fas fa-filter me-1"></i> تصفية
@@ -262,62 +281,68 @@
     </form>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0"><i class="fas fa-calculator me-2 text-success"></i>بيانات التحصيل</h5>
+        <h5 class="fw-bold mb-0"><i class="fas fa-book me-2 text-success"></i>تسجيل حركة</h5>
         <a asp-controller="Transactions" asp-action="Create" asp-route-clientId="@Model.Client.Id" asp-route-section="accounts"
            class="btn btn-success">
-            <i class="fas fa-plus me-1"></i> تحصيل جديد
+            <i class="fas fa-plus me-1"></i> حركة تحصيل
         </a>
     </div>
-    @if (accountTransactions.Any())
+    @if (Model.Movements.Any())
     {
-        <div class="transaction-table mb-4">
+        <div class="transaction-table client-movements-table mb-4">
             <table class="table table-striped table-hover table-bordered">
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>التاريخ</th>
-                        <th>فلوس عليه قديم</th>
-                        <th>تحصيل نقدي</th>
-                        <th>تحصيل إلكتروني</th>
-                        <th>الإضافة</th>
-                        <th>ملاحظات الإضافة</th>
-                        <th class="calculated-field">الباقي بعد التحصيل</th>
-                        <th>الخصم</th>
-                        <th>ملاحظات الخصم</th>
-                        <th class="calculated-field">إجمالي الحسابات</th>
+                        <th class="movement-date-column">التاريخ</th>
+                        <th>البيان</th>
+                        <th class="meal-account-column">حساب الوجبة (الصافي × سعر الكيلو)</th>
+                        <th>عليه</th>
+                        <th>له (التحصيل)</th>
+                        <th class="calculated-field">الباقي بعد الحركة</th>
+                        <th class="no-print">فاتورة</th>
                         <th class="no-print">إجراءات</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @for (int i = 0; i < accountTransactions.Count; i++)
+                    @for (var i = 0; i < Model.Movements.Count; i++)
                     {
-                        var t = accountTransactions[i];
+                        var movement = Model.Movements[i];
                         <tr>
-                            <td>@(i + 1)</td>
-                            <td class="text-nowrap">@t.Date.ToString("yyyy/MM/dd")</td>
-                            <td>@t.OldBalance.ToString("#,##0.####")</td>
-                            <td>@t.CashCollection.ToString("#,##0.####")</td>
-                            <td>@t.ElectronicCollection.ToString("#,##0.####")</td>
-                            <td>@t.AdditionAmount.ToString("#,##0.####")</td>
-                            <td class="small">@(t.AdditionNotes ?? "-")</td>
-                            <td class="calculated-field fw-bold">@t.RemainingAfterCollection.ToString("#,##0.####")</td>
-                            <td>@t.DiscountAmount.ToString("#,##0.####")</td>
-                            <td class="small">@(t.DiscountNotes ?? "-")</td>
-                            <td class="calculated-field fw-bold">@t.SubTotal.ToString("#,##0.####")</td>
+                            <td>@((Model.Page - 1) * Model.PageSize + i + 1)</td>
+                            <td class="movement-date-column">@movement.Date.ToString("yyyy/MM/dd")</td>
+                            <td>@movement.Statement</td>
+                            <td class="meal-account-column">
+                                @(movement.MealTotal == 0
+                                    ? "—"
+                                    : $"{movement.NetWeight.ToString("#,##0.####")} × {movement.PricePerKilo.ToString("#,##0.####")}")
+                            </td>
+                            <td class="text-danger fw-bold">@movement.AmountDue.ToString("#,##0.####")</td>
+                            <td class="text-success fw-bold">@movement.AmountPaid.ToString("#,##0.####")</td>
+                            <td class="calculated-field fw-bold">@movement.RemainingBalance.ToString("#,##0.####")</td>
+                            <td class="no-print">
+                                <a asp-controller="Transactions" asp-action="Invoice" asp-route-id="@movement.TransactionId"
+                                   class="btn btn-sm btn-success text-nowrap" title="فاتورة هذه الحركة">
+                                    <i class="fas fa-file-invoice me-1"></i> فاتورة
+                                </a>
+                            </td>
                             <td class="no-print">
                                 <div class="d-flex gap-1">
-                                    <a asp-controller="Transactions" asp-action="Invoice" asp-route-id="@t.Id"
-                                       class="btn btn-sm btn-success btn-action" title="الفاتورة">
-                                        <i class="fas fa-file-invoice"></i>
-                                    </a>
-                                    <a asp-controller="Transactions" asp-action="Edit" asp-route-id="@t.Id" asp-route-section="accounts"
-                                       class="btn btn-sm btn-warning btn-action" title="تعديل التحصيل">
+                                    <a asp-controller="Transactions" asp-action="Edit" asp-route-id="@movement.TransactionId"
+                                       asp-route-section="@(movement.MealTotal != 0 ? "meal" : "accounts")"
+                                       asp-route-returnPage="@Model.Page" asp-route-returnPageSize="@Model.PageSize"
+                                       asp-route-returnFromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                                       asp-route-returnToDate="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                                       class="btn btn-sm btn-warning" title="تعديل الحركة">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form asp-controller="Transactions" asp-action="Delete" asp-route-id="@t.Id"
-                                          method="post" data-confirm="هل أنت متأكد من حذف هذا التحصيل؟" style="display:inline;">
+                                    <form asp-controller="Transactions" asp-action="Delete" asp-route-id="@movement.TransactionId"
+                                          asp-route-returnPage="@Model.Page" asp-route-returnPageSize="@Model.PageSize"
+                                          asp-route-returnFromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                                          asp-route-returnToDate="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                                          method="post" data-confirm="هل أنت متأكد من حذف هذه الحركة؟">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-sm btn-danger btn-action" title="حذف التحصيل">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="حذف الحركة">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
@@ -328,78 +353,50 @@
                 </tbody>
             </table>
         </div>
-    }
-    else
-    {
-        <div class="alert alert-light">لا توجد بيانات تحصيل في الفترة المحددة.</div>
-    }
-
-    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h5 class="fw-bold mb-0"><i class="fas fa-drumstick-bite me-2 text-success"></i>بيانات الوجبة</h5>
-    </div>
-    @if (mealTransactions.Any())
-    {
-        <div class="transaction-table">
-            <table class="table table-striped table-hover table-bordered">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>التاريخ</th>
-                        <th>القائم</th>
-                        <th>الفارغ</th>
-                        <th class="calculated-field">الصافي</th>
-                        <th>نوع الوجبة</th>
-                        <th>سعر المزرعة</th>
-                        <th>الزيادة على سعر المزرعة</th>
-                        <th>سعر الكيلو</th>
-                        <th class="calculated-field">إجمالي الوجبة</th>
-                        <th class="calculated-field">الإجمالي الكلي</th>
-                        <th class="no-print">إجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (int i = 0; i < mealTransactions.Count; i++)
+        @if (Model.TotalPages > 1)
+        {
+            var firstPage = Math.Max(1, Model.Page - 2);
+            var lastPage = Math.Min(Model.TotalPages, firstPage + 4);
+            <nav class="no-print" aria-label="التنقل بين صفحات الحركات">
+                <ul class="pagination justify-content-center flex-wrap">
+                    <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Profile" asp-route-id="@Model.Client.Id" asp-route-page="1"
+                           asp-route-pageSize="@Model.PageSize" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                           asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">الأولى</a>
+                    </li>
+                    <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Profile" asp-route-id="@Model.Client.Id" asp-route-page="@(Model.Page - 1)"
+                           asp-route-pageSize="@Model.PageSize" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                           asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">السابق</a>
+                    </li>
+                    @for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++)
                     {
-                        var t = mealTransactions[i];
-                        <tr>
-                            <td>@(i + 1)</td>
-                            <td class="text-nowrap">@t.Date.ToString("yyyy/MM/dd")</td>
-                            <td>@t.GrossWeight.ToString("#,##0.####")</td>
-                            <td>@t.EmptyWeight.ToString("#,##0.####")</td>
-                            <td class="calculated-field fw-bold">@t.NetWeight.ToString("#,##0.####")</td>
-                            <td>@(string.IsNullOrWhiteSpace(t.MealType) ? "—" : t.MealType)</td>
-                            <td>@t.FarmPrice.ToString("#,##0.####")</td>
-                            <td>@t.ExtraField.ToString("#,##0.####")</td>
-                            <td>@t.PricePerKilo.ToString("#,##0.####")</td>
-                            <td class="calculated-field fw-bold">@t.MealTotal.ToString("#,##0.####")</td>
-                            <td class="calculated-field fw-bold">@t.TotalDue.ToString("#,##0.####")</td>
-                            <td class="no-print">
-                                <div class="d-flex gap-1">
-                                    <a asp-controller="Transactions" asp-action="Invoice" asp-route-id="@t.Id"
-                                       class="btn btn-sm btn-success btn-action" title="الفاتورة">
-                                        <i class="fas fa-file-invoice"></i>
-                                    </a>
-                                    <a asp-controller="Transactions" asp-action="Edit" asp-route-id="@t.Id" asp-route-section="meal"
-                                       class="btn btn-sm btn-warning btn-action" title="تعديل">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form asp-controller="Transactions" asp-action="Delete" asp-route-id="@t.Id"
-                                          method="post" data-confirm="هل أنت متأكد من حذف هذه الوجبة؟" style="display:inline;">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-sm btn-danger btn-action" title="حذف">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
+                        <li class="page-item @(Model.Page == pageNumber ? "active" : "")">
+                            <a class="page-link" asp-action="Profile" asp-route-id="@Model.Client.Id" asp-route-page="@pageNumber"
+                               asp-route-pageSize="@Model.PageSize" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                               asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">@pageNumber</a>
+                        </li>
                     }
-                </tbody>
-            </table>
-        </div>
+                    <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="Profile" asp-route-id="@Model.Client.Id" asp-route-page="@(Model.Page + 1)"
+                           asp-route-pageSize="@Model.PageSize" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                           asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">التالي</a>
+                    </li>
+                    <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="Profile" asp-route-id="@Model.Client.Id" asp-route-page="@Model.TotalPages"
+                           asp-route-pageSize="@Model.PageSize" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                           asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">الأخيرة</a>
+                    </li>
+                </ul>
+                <div class="text-center text-muted small">
+                    عرض @((Model.Page - 1) * Model.PageSize + 1) إلى @Math.Min(Model.Page * Model.PageSize, Model.TotalCount)
+                    من @Model.TotalCount حركة
+                </div>
+            </nav>
+        }
     }
     else
     {
-        <div class="alert alert-light">لا توجد وجبات في الفترة المحددة.</div>
+        <div class="alert alert-light">لا توجد حركات في الفترة المحددة.</div>
     }
 </div>

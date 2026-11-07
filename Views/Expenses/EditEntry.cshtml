@@ -1,0 +1,67 @@
+@model HagImamAccounts.ViewModels.ExpenseEntryInputViewModel
+@{
+    ViewData["Title"] = "تعديل حركة مصروفات";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="fas fa-edit me-2 text-warning"></i>تعديل حركة مصروفات
+        </h3>
+        <a asp-action="Index" asp-route-page="@Model.Page" asp-route-pageSize="@Model.PageSize"
+           class="btn btn-outline-dark">
+            <i class="fas fa-arrow-right me-1"></i> رجوع للمصروفات
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="EditEntry" method="post">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Page" />
+                <input type="hidden" asp-for="PageSize" />
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-4">
+                        <label asp-for="Statement" class="form-label">البيان</label>
+                        <input asp-for="Statement" class="form-control" maxlength="500" />
+                        <span asp-validation-for="Statement" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label asp-for="Incoming" class="form-label">وارد</label>
+                        <input asp-for="Incoming" type="number" min="0" step="0.0001" class="form-control" />
+                        <span asp-validation-for="Incoming" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label asp-for="Outgoing" class="form-label">صادر</label>
+                        <input asp-for="Outgoing" type="number" min="0" step="0.0001" class="form-control" />
+                        <span asp-validation-for="Outgoing" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label asp-for="TreasuryAccount" class="form-label">الصادر من</label>
+                        <select asp-for="TreasuryAccount" class="form-select">
+                            <option value="">— اختر الخزنة —</option>
+                            @foreach (var account in ExpenseEntryInputViewModel.OutgoingTreasuryAccounts)
+                            {
+                                var balance = Model.TreasuryBalances.TryGetValue(account, out var amount) ? amount : 0m;
+                                <option value="@account">@TreasuryEntry.GetAccountName(account) — الرصيد: @balance.ToString("#,##0.####")</option>
+                            }
+                        </select>
+                        <span asp-validation-for="TreasuryAccount" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label asp-for="Date" class="form-label">التاريخ</label>
+                        <input asp-for="Date" type="date" class="form-control" />
+                        <span asp-validation-for="Date" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="text-muted small">عند تغيير الصادر يتم تحديث رصيد الخزنة المختارة تلقائيًا.</div>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-1"></i> حفظ التعديلات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
