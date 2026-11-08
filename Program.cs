@@ -11,7 +11,6 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<ReadOnlyAccessFilter>());
 
 builder.Services.AddScoped<CapitalService>();
-builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
 builder.Services.AddSingleton<ReadOnlyAccessFilter>();
 builder.Services.AddSingleton<PortalAccountAuthenticator>();
 builder.Services
@@ -23,7 +22,7 @@ builder.Services
         options.Cookie.Name = "Perfect.Auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
     });
@@ -51,10 +50,8 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthentication();
