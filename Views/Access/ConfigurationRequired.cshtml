@@ -1,0 +1,35 @@
+@model IReadOnlyList<string>
+@{
+    Layout = null;
+    ViewData["Title"] = "إعداد تسجيل الدخول";
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Perfect | بيرفكت</title>
+    <style>
+        body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: #f3f6f4; color: #23332b; font-family: Tahoma, Arial, sans-serif; }
+        main { width: min(620px, 100%); padding: 32px; border: 1px solid #e3e9e5; border-radius: 18px; background: white; box-shadow: 0 16px 50px #173b3014; }
+        h1 { margin-top: 0; color: #9c5e1d; font-size: 24px; }
+        p, li { line-height: 1.9; }
+        code { direction: ltr; display: inline-block; padding: 3px 8px; border-radius: 6px; background: #f0f3f1; color: #245c40; }
+        .note { margin-top: 22px; color: #68776e; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>إعدادات تسجيل الدخول غير مكتملة</h1>
+        <p>التطبيق يعمل، لكن يلزم إضافة متغيرات كلمات المرور المشفّرة في إعدادات استضافة الموقع:</p>
+        <ul>
+            @foreach (var setting in Model)
+            {
+                <li><code>@setting</code></li>
+            }
+        </ul>
+        <p>أضف القيم في إعدادات البيئة لدى الاستضافة، ثم أعد تشغيل الموقع. هذه القيم هي هاشات كلمات المرور وليست كلمات المرور نفسها.</p>
+        <p class="note">لا تضع كلمات المرور أو الهاشات داخل ملفات عامة أو مستودع GitHub.</p>
+    </main>
+</body>
+</html>

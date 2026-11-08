@@ -1,0 +1,32 @@
+@model HagImamAccounts.Models.ErrorViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "حدث خطأ";
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Perfect | بيرفكت</title>
+    <style>
+        body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: #f5f7f6; color: #26352d; font-family: Tahoma, Arial, sans-serif; }
+        main { width: min(560px, 100%); padding: 36px; border: 1px solid #e5e9e6; border-radius: 18px; background: white; text-align: center; box-shadow: 0 16px 50px #173b3012; }
+        h1 { margin: 0 0 12px; font-size: 25px; }
+        p { color: #68776e; line-height: 1.8; }
+        a { display: inline-block; margin-top: 12px; padding: 11px 20px; border-radius: 9px; color: white; background: #218257; text-decoration: none; }
+        small { display: block; margin-top: 22px; color: #89958e; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>عذرًا، حدث خطأ أثناء تنفيذ الطلب</h1>
+        <p>حاول مرة أخرى بعد قليل. إذا استمرت المشكلة، تواصل مع مسؤول الموقع وأرسل رقم الطلب.</p>
+        <a href="/Access/Login">العودة لتسجيل الدخول</a>
+        @if (Model.ShowRequestId)
+        {
+            <small>رقم الطلب: @Model.RequestId</small>
+        }
+    </main>
+</body>
+</html>

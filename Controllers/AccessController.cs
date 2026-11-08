@@ -21,6 +21,9 @@ public class AccessController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
+        if (!_authenticator.IsConfigured)
+            return View("ConfigurationRequired", _authenticator.MissingSettings);
+
         if (User.Identity?.IsAuthenticated == true)
             return RedirectToAction("Index", "Clients");
 
@@ -32,6 +35,9 @@ public class AccessController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
+        if (!_authenticator.IsConfigured)
+            return View("ConfigurationRequired", _authenticator.MissingSettings);
+
         if (!ModelState.IsValid)
             return View(model);
 
