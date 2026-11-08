@@ -11,6 +11,7 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<ReadOnlyAccessFilter>());
 
 builder.Services.AddScoped<CapitalService>();
+builder.Services.AddHttpsRedirection(options => options.HttpsPort = 443);
 builder.Services.AddSingleton<ReadOnlyAccessFilter>();
 builder.Services.AddSingleton<PortalAccountAuthenticator>();
 builder.Services

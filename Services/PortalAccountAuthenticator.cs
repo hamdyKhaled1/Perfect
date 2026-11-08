@@ -13,28 +13,27 @@ public sealed record PortalAccount(string UserName, string Role, string Password
 
 public sealed class PortalAccountAuthenticator
 {
+    private const string DefaultSuperAdminPasswordHash =
+        "AQAAAAIAAYagAAAAEMOpkgdlbCDmN7doaTGli8SJG+TupvX/B8BEf2APt7oQ3U0tBT+c5KtbHWFaIGbAGw==";
+    private const string DefaultAdminPasswordHash =
+        "AQAAAAIAAYagAAAAENFD8mHMfRR78+p7I7vxD0a67o/4zfbDJD8yxVQr4eUgqCombNUasQCjAbhI3h/eUA==";
+
     private readonly PasswordHasher<PortalAccount> _passwordHasher = new();
     private readonly PortalAccount[] _accounts;
     private readonly PortalAccount _dummyAccount;
-    private readonly string[] _missingSettings;
 
     public PortalAccountAuthenticator(IConfiguration configuration)
     {
-        var superAdminHash = configuration["PortalAccounts:SuperAdminPasswordHash"];
-        var adminHash = configuration["PortalAccounts:AdminPasswordHash"];
-        _missingSettings = new[]
-            {
-                string.IsNullOrWhiteSpace(superAdminHash) ? "PortalAccounts__SuperAdminPasswordHash" : null,
-                string.IsNullOrWhiteSpace(adminHash) ? "PortalAccounts__AdminPasswordHash" : null
-            }
-            .Where(setting => setting != null)
-            .Select(setting => setting!)
-            .ToArray();
-
         _accounts =
         [
-            new PortalAccount("superadmin", PortalRoles.SuperAdmin, superAdminHash ?? string.Empty),
-            new PortalAccount("admin", PortalRoles.Admin, adminHash ?? string.Empty)
+            new PortalAccount(
+                "superadmin",
+                PortalRoles.SuperAdmin,
+                GetPasswordHash(configuration, "SuperAdminPasswordHash", DefaultSuperAdminPasswordHash)),
+            new PortalAccount(
+                "admin",
+                PortalRoles.Admin,
+                GetPasswordHash(configuration, "AdminPasswordHash", DefaultAdminPasswordHash))
         ];
 
         _dummyAccount = new PortalAccount("invalid", PortalRoles.Admin, string.Empty);
@@ -44,15 +43,8 @@ public sealed class PortalAccountAuthenticator
         };
     }
 
-    public bool IsConfigured => _missingSettings.Length == 0;
-
-    public IReadOnlyList<string> MissingSettings => _missingSettings;
-
     public PortalAccount? Authenticate(string userName, string password)
     {
-        if (!IsConfigured)
-            throw new InvalidOperationException("Portal account password hashes are not configured.");
-
         var account = _accounts.FirstOrDefault(candidate =>
             string.Equals(candidate.UserName, userName.Trim().Normalize(NormalizationForm.FormKC), StringComparison.OrdinalIgnoreCase));
 
@@ -62,6 +54,13 @@ public sealed class PortalAccountAuthenticator
             verifiedAccount.PasswordHash,
             NormalizePassword(password));
         return account != null && result != PasswordVerificationResult.Failed ? account : null;
+    }
+
+    private static string GetPasswordHash(IConfiguration configuration, string key, string defaultHash)
+    {
+        return string.IsNullOrWhiteSpace(configuration[$"PortalAccounts:{key}"])
+            ? defaultHash
+            : configuration[$"PortalAccounts:{key}"]!;
     }
 
     private static string NormalizePassword(string password)
